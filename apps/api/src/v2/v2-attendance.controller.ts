@@ -9,6 +9,7 @@ import {
   UploadedFile,
   HttpException,
   HttpStatus,
+  Logger,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import {
@@ -23,6 +24,8 @@ import { V2AttendanceService } from "./v2-attendance.service";
 @ApiTags("V2 Attendance")
 @Controller("v2/attendance")
 export class V2AttendanceController {
+  private readonly logger = new Logger(V2AttendanceController.name);
+
   constructor(private readonly v2Service: V2AttendanceService) {}
 
   @Get("report")
@@ -106,6 +109,23 @@ export class V2AttendanceController {
       throw new HttpException("No file uploaded", HttpStatus.BAD_REQUEST);
     }
 
+    // Validate user file type
+    const userFileExt = "." + file.originalname.split(".").pop()?.toLowerCase();
+    if (userFileExt !== ".dat") {
+      throw new HttpException(
+        "User file must be a .dat file",
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    // Validate user file naming convention (Must start with 'user')
+    if (!file.originalname.toLowerCase().startsWith("user")) {
+      throw new HttpException(
+        'User file name must start with "user" (e.g., user.dat)',
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
     try {
       const result = await this.v2Service.uploadUsers(file.buffer);
       return {
@@ -137,21 +157,51 @@ export class V2AttendanceController {
     if (!file) {
       throw new HttpException("No file uploaded", HttpStatus.BAD_REQUEST);
     }
+    // Validate attendance file type
+    const fileExt = "." + file.originalname.split(".").pop()?.toLowerCase();
+    const validExtensions = [".dat", ".txt", ".csv"];
+    if (!validExtensions.includes(fileExt)) {
+      throw new HttpException(
+        `Invalid attendance file type. Supported: ${validExtensions.join(
+          ", "
+        )}`,
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    // Validate attendance file naming convention (Must start with 'C')
+    // The user's file is "CGKK231063174_attlog-2.dat", so we check for 'C' or 'c'
+    if (!file.originalname.toUpperCase().startsWith("C")) {
+      throw new HttpException(
+        'Attendance file name must start with "C" (e.g., C001.dat)',
+        HttpStatus.BAD_REQUEST
+      );
+    }
 
     try {
+      this.logger.log(
+        `Starting attendance upload for file: ${file.originalname}`
+      );
       const result = await this.v2Service.uploadAttendance(file.buffer);
+      this.logger.log(`Attendance upload completed: ${JSON.stringify(result)}`);
+
       return {
         success: true,
         message: `Attendance uploaded: ${result.inserted} inserted, ${result.skipped} skipped`,
         ...result,
       };
     } catch (error: any) {
+      this.logger.error(
+        `Attendance upload failed: ${error.message}`,
+        error.stack
+      );
       throw new HttpException(
         error.message || "Failed to upload attendance",
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }
   }
+
   @Post("mark-comp-off")
   @ApiOperation({ summary: "Mark a specific day as COMP off (only if ABSENT)" })
   @ApiBody({

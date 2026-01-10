@@ -166,95 +166,145 @@ export class V2AttendanceService {
   async uploadAttendance(
     buffer: Buffer
   ): Promise<{ inserted: number; skipped: number }> {
-    const stream = Readable.from(buffer);
-    const rl = readline.createInterface({ input: stream, crlfDelay: Infinity });
+    try {
+      return this.dataSource.transaction(async (manager) => {
+        let inserted = 0;
+        let skipped = 0;
 
-    let inserted = 0;
-    let skipped = 0;
+        const employeeRepo = manager.getRepository(Employee);
+        const punchRepo = manager.getRepository(Punch);
 
-    // Optimization: Fetch all employees once
-    const allEmployees = await this.employeeRepo.find();
-    const employeeMap = new Map<number, Employee>();
-    for (const emp of allEmployees) {
-      employeeMap.set(emp.biometric_id, emp);
-    }
-
-    // Track affected dates per employee for targeted recalculation
-    // Map<EmployeeID, Set<DateString>>
-    const affectedUserDates = new Map<number, Set<string>>();
-
-    for await (const line of rl) {
-      const trimmed = line.trim();
-      if (!trimmed) continue;
-
-      const parsed = this.parseAttendanceLine(trimmed);
-      if (!parsed) {
-        skipped++;
-        continue;
-      }
-
-      // Find or create employee using Map
-      let employee = employeeMap.get(parsed.biometric_id);
-
-      if (!employee) {
-        const newEmployee = this.employeeRepo.create({
-          biometric_id: parsed.biometric_id,
-          name: null,
-        });
-        employee = await this.employeeRepo.save(newEmployee);
-        employeeMap.set(parsed.biometric_id, employee);
-      }
-
-      // Track this date for this user
-      if (!affectedUserDates.has(employee.id)) {
-        affectedUserDates.set(employee.id, new Set());
-      }
-      const dateStr = parsed.punch_time.toISOString().split("T")[0];
-      affectedUserDates.get(employee.id)!.add(dateStr);
-
-      // Try insert - skip if duplicate (unique constraint)
-      try {
-        const punch = this.punchRepo.create({
-          employee_id: employee.id,
-          punch_time: parsed.punch_time,
-          verification_type: parsed.verification_type,
-          punch_type: null,
-          is_paired: false,
-          is_edited: false,
-        });
-        await this.punchRepo.save(punch);
-        inserted++;
-      } catch (error: unknown) {
-        // Duplicate entry - skip
-        const err = error as { code?: string; message?: string };
-        if (err.code === "23505" || err.message?.includes("duplicate")) {
-          skipped++;
-        } else {
-          throw error;
+        // Optimization: Fetch all employees once
+        const allEmployees = await employeeRepo.find();
+        const employeeMap = new Map<number, Employee>();
+        for (const emp of allEmployees) {
+          employeeMap.set(emp.biometric_id, emp);
         }
-      }
+
+        // Track affected dates per employee for targeted recalculation
+        // Map<EmployeeID, Set<DateString>>
+        const affectedUserDates = new Map<number, Set<string>>();
+
+        const stream = Readable.from(buffer);
+        const rl = readline.createInterface({
+          input: stream,
+          crlfDelay: Infinity,
+        });
+
+        console.log("step 1 completed", rl);
+
+        for await (const line of rl) {
+          const trimmed = line.trim();
+          if (!trimmed) continue;
+
+          const parsed = this.parseAttendanceLine(trimmed);
+          if (!parsed) {
+            skipped++;
+            continue;
+          }
+
+          // Find or create employee using Map
+          let employee = employeeMap.get(parsed.biometric_id);
+
+          if (!employee) {
+            const newEmployee = employeeRepo.create({
+              biometric_id: parsed.biometric_id,
+              name: null,
+            });
+            employee = await employeeRepo.save(newEmployee);
+            employeeMap.set(parsed.biometric_id, employee);
+          }
+
+          // Track this date for this user
+          if (!affectedUserDates.has(employee.id)) {
+            affectedUserDates.set(employee.id, new Set());
+          }
+          const dateStr = parsed.punch_time.toISOString().split("T")[0];
+          affectedUserDates.get(employee.id)!.add(dateStr);
+
+          // Try insert - skip if duplicate (unique constraint)
+          // Use createQueryBuilder to safely handle duplicates without aborting transaction
+          const result = await punchRepo
+            .createQueryBuilder()
+            .insert()
+            .into(Punch)
+            .values({
+              employee_id: employee.id,
+              punch_time: parsed.punch_time,
+              verification_type: parsed.verification_type,
+              punch_type: null,
+              is_paired: false,
+              is_edited: false,
+            })
+            .orIgnore() // ON CONFLICT DO NOTHING
+            .execute();
+
+          // Check if row was actually inserted
+          // Postgres returns identifiers for inserted rows
+          if (result.identifiers && result.identifiers.length > 0) {
+            inserted++;
+          } else {
+            skipped++;
+          }
+        }
+        // After inserting, compute punch_type and is_paired only for the affected records
+        if (affectedUserDates.size > 0) {
+          try {
+            // EXPANSION: Recalculate for the ENTIRE month for affected users
+            // This ensures days with no punches are correctly marked as ABSENT
+            for (const [userId, dates] of affectedUserDates.entries()) {
+              const months = new Set<string>(); // "YYYY-MM"
+              for (const dateStr of dates) {
+                months.add(dateStr.substring(0, 7));
+              }
+
+              for (const monthStr of months) {
+                const [year, month] = monthStr.split("-").map(Number);
+                const daysInMonth = new Date(year, month, 0).getDate(); // month is 1-indexed here? No, Date constructor: year, monthIndex (0-11), 0 (last day of prev month).
+                // Wait, split "2024-01" -> year=2024, month=1.
+                // new Date(2024, 1, 0) -> Last day of Jan (because month 1 is Feb). Correct.
+
+                for (let d = 1; d <= daysInMonth; d++) {
+                  const dayStr = `${year}-${String(month).padStart(
+                    2,
+                    "0"
+                  )}-${String(d).padStart(2, "0")}`;
+                  dates.add(dayStr);
+                }
+              }
+            }
+
+            await this.computePunchTypes(affectedUserDates, manager);
+            await this.computeDailyAttendance(affectedUserDates, manager);
+          } catch (error: any) {
+            this.logger.error(
+              `Error during recalculation phase: ${error.message}`,
+              error.stack
+            );
+            // Re-throw to ensure transaction rollback if recalculation fails critically
+            throw error;
+          }
+
+          // Calculate total impacted days for logging
+          let totalDays = 0;
+          for (const dates of affectedUserDates.values()) {
+            totalDays += dates.size;
+          }
+
+          this.logger.log(
+            `Recalculated attendance for ${affectedUserDates.size} users across ${totalDays} total user-days (Full Month).`
+          );
+        }
+
+        this.logger.log(
+          `Attendance uploaded: ${inserted} inserted, ${skipped} skipped (duplicates)`
+        );
+        return { inserted, skipped };
+      });
+    } catch (error: any) {
+      this.logger.error(`Failed to upload attendance: ${error.message}`);
+      throw error;
     }
-
-    // After inserting, compute punch_type and is_paired only for the affected records
-    if (affectedUserDates.size > 0) {
-      await this.computePunchTypes(affectedUserDates);
-      await this.computeDailyAttendance(affectedUserDates);
-
-      // Calculate total impacted days for logging
-      let totalDays = 0;
-      for (const dates of affectedUserDates.values()) {
-        totalDays += dates.size;
-      }
-
-      this.logger.log(
-        `Recalculated attendance for ${affectedUserDates.size} users across ${totalDays} total user-days.`
-      );
-    }
-
-    this.logger.log(
-      `Attendance uploaded: ${inserted} inserted, ${skipped} skipped (duplicates)`
-    );
-    return { inserted, skipped };
   }
 
   /**
@@ -293,8 +343,9 @@ export class V2AttendanceService {
       const verification_type = verifyCode === 2 ? "Card" : "Fingerprint";
 
       return { biometric_id, punch_time, verification_type };
-    } catch {
-      return null;
+    } catch (error) {
+      this.logger.error(`Failed to parse attendance line: ${error.message}`);
+      throw error;
     }
   }
 
@@ -303,67 +354,79 @@ export class V2AttendanceService {
    * Logic: Sort by time, odd positions = IN, even = OUT
    */
   private async computePunchTypes(
-    affectedUserDates?: Map<number, Set<string>>
+    affectedUserDates?: Map<number, Set<string>>,
+    manager?: EntityManager
   ): Promise<void> {
-    // If no map provided, process all employees (fallback/legacy)
-    if (!affectedUserDates) {
-      const allEmployees = await this.employeeRepo.find();
-      affectedUserDates = new Map();
-      for (const emp of allEmployees) {
-        affectedUserDates.set(emp.id, new Set()); // Empty set means "all dates" implied?
-        // Actually, for full recalc, we need a different logic path or just treat it as global.
-        // For now, let's assume if it's undefined we fetch everything appropriately.
-        // But to keep it simple, we'll iterate efficiently.
-      }
-      // Re-implementing legacy "all" behavior is complex with this signature change.
-      // Let's stick to the new optimized path primarily.
-      // If affectedUserDates is undefined, we simply process ALL punches for ALL users (legacy behavior)
-      const employees = await this.employeeRepo.find();
-      for (const employee of employees) {
-        const punches = await this.punchRepo.find({
-          where: { employee_id: employee.id },
-          order: { punch_time: "ASC" },
-        });
-        // Process all dates found
-        const byDate = new Map<string, Punch[]>();
-        for (const punch of punches) {
-          const date = punch.punch_time.toISOString().split("T")[0];
-          if (!byDate.has(date)) byDate.set(date, []);
-          byDate.get(date)!.push(punch);
+    try {
+      const punchRepo = manager ? manager.getRepository(Punch) : this.punchRepo;
+      const employeeRepo = manager
+        ? manager.getRepository(Employee)
+        : this.employeeRepo;
+
+      // If no map provided, process all employees (fallback/legacy)
+      if (!affectedUserDates) {
+        const allEmployees = await employeeRepo.find();
+        affectedUserDates = new Map();
+        for (const emp of allEmployees) {
+          affectedUserDates.set(emp.id, new Set());
         }
-        for (const [, dayPunches] of byDate) {
-          this.assignPunchTypes(dayPunches);
-          await this.punchRepo.save(dayPunches);
+
+        const employees = await employeeRepo.find();
+        for (const employee of employees) {
+          const punches = await punchRepo.find({
+            where: { employee_id: employee.id },
+            order: { punch_time: "ASC" },
+          });
+          // Process all dates found
+          const byDate = new Map<string, Punch[]>();
+          for (const punch of punches) {
+            const date = punch.punch_time.toISOString().split("T")[0];
+            if (!byDate.has(date)) byDate.set(date, []);
+            byDate.get(date)!.push(punch);
+          }
+          for (const [, dayPunches] of byDate) {
+            this.assignPunchTypes(dayPunches);
+            await punchRepo.save(dayPunches);
+          }
+        }
+        return;
+      }
+
+      // Optimized path: Process only affected users and dates
+      const employeeIds = Array.from(affectedUserDates.keys());
+      if (employeeIds.length === 0) return;
+
+      for (const employeeId of employeeIds) {
+        const dates = affectedUserDates.get(employeeId);
+        if (!dates || dates.size === 0) continue;
+
+        for (const dateStr of dates) {
+          try {
+            const startOfDay = new Date(`${dateStr}T00:00:00+05:30`);
+            const endOfDay = new Date(`${dateStr}T23:59:59.999+05:30`);
+
+            const dayPunches = await punchRepo.find({
+              where: {
+                employee_id: employeeId,
+                punch_time: Between(startOfDay, endOfDay),
+              },
+              order: { punch_time: "ASC" },
+            });
+
+            if (dayPunches.length > 0) {
+              this.assignPunchTypes(dayPunches);
+              await punchRepo.save(dayPunches);
+            }
+          } catch (error: any) {
+            this.logger.error(
+              `Failed to compute punch types for user ${employeeId} on ${dateStr}: ${error.message}`
+            );
+          }
         }
       }
-      return;
-    }
-
-    // Optimized path: Process only affected users and dates
-    const employeeIds = Array.from(affectedUserDates.keys());
-    if (employeeIds.length === 0) return;
-
-    for (const employeeId of employeeIds) {
-      const dates = affectedUserDates.get(employeeId);
-      if (!dates || dates.size === 0) continue;
-
-      for (const dateStr of dates) {
-        const startOfDay = new Date(`${dateStr}T00:00:00+05:30`);
-        const endOfDay = new Date(`${dateStr}T23:59:59.999+05:30`);
-
-        const dayPunches = await this.punchRepo.find({
-          where: {
-            employee_id: employeeId,
-            punch_time: Between(startOfDay, endOfDay),
-          },
-          order: { punch_time: "ASC" },
-        });
-
-        if (dayPunches.length > 0) {
-          this.assignPunchTypes(dayPunches);
-          await this.punchRepo.save(dayPunches);
-        }
-      }
+    } catch (error: any) {
+      this.logger.error(`Failed to compute daily attendance: ${error.message}`);
+      throw error;
     }
   }
 
@@ -388,71 +451,90 @@ export class V2AttendanceService {
    * Creates entries for the complete month(s) detected from punch data
    */
   private async computeDailyAttendance(
-    affectedUserDates?: Map<number, Set<string>>
+    affectedUserDates?: Map<number, Set<string>>,
+    manager?: EntityManager
   ): Promise<void> {
-    // Helper: convert time string to minutes
-    const timeToMinutes = (time: string): number => {
-      const [h, m] = time.split(":").map(Number);
-      return h * 60 + m;
-    };
+    try {
+      const employeeRepo = manager
+        ? manager.getRepository(Employee)
+        : this.employeeRepo;
+      const punchRepo = manager ? manager.getRepository(Punch) : this.punchRepo;
 
-    // Helper: format time from Date
-    const formatTime = (date: Date): string => {
-      const h = date.getHours().toString().padStart(2, "0");
-      const m = date.getMinutes().toString().padStart(2, "0");
-      const s = date.getSeconds().toString().padStart(2, "0");
-      return `${h}:${m}:${s}`;
-    };
+      // Helper: convert time string to minutes
+      const timeToMinutes = (time: string): number => {
+        const [h, m] = time.split(":").map(Number);
+        return h * 60 + m;
+      };
 
-    // Helper: get day code (MON, TUE, WED, THU, FRI, SAT, SUN)
-    const getDayCode = (dateStr: string): string => {
-      const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-      const date = new Date(dateStr + "T00:00:00");
-      return days[date.getDay()];
-    };
+      // Helper: format time from Date
+      const formatTime = (date: Date): string => {
+        const h = date.getHours().toString().padStart(2, "0");
+        const m = date.getMinutes().toString().padStart(2, "0");
+        const s = date.getSeconds().toString().padStart(2, "0");
+        return `${h}:${m}:${s}`;
+      };
 
-    // Legacy/Fallback path: Process all
-    if (!affectedUserDates) {
-      const employees = await this.employeeRepo.find();
-      for (const employee of employees) {
-        const punches = await this.punchRepo.find({
-          where: { employee_id: employee.id },
-          order: { punch_time: "ASC" },
-        });
-        const dates = new Set<string>(
-          punches.map((p) => p.punch_time.toISOString().split("T")[0])
-        );
+      // Helper: get day code (MON, TUE, WED, THU, FRI, SAT, SUN)
+      const getDayCode = (dateStr: string): string => {
+        const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        const date = new Date(dateStr + "T00:00:00");
+        return days[date.getDay()];
+      };
+
+      // Legacy/Fallback path: Process all
+      if (!affectedUserDates) {
+        const employees = await employeeRepo.find();
+        for (const employee of employees) {
+          const punches = await punchRepo.find({
+            where: { employee_id: employee.id },
+            order: { punch_time: "ASC" },
+          });
+          const dates = new Set<string>(
+            punches.map((p) => p.punch_time.toISOString().split("T")[0])
+          );
+
+          for (const dateStr of dates) {
+            await this.computeDailyAttendanceForDay(
+              employee.id,
+              dateStr,
+              timeToMinutes,
+              formatTime,
+              getDayCode,
+              manager
+            );
+          }
+        }
+        return;
+      }
+
+      // Optimized path
+      const employeeIds = Array.from(affectedUserDates.keys());
+      for (const employeeId of employeeIds) {
+        const dates = affectedUserDates.get(employeeId);
+        if (!dates) continue;
 
         for (const dateStr of dates) {
-          await this.computeDailyAttendanceForDay(
-            employee.id,
-            dateStr,
-            timeToMinutes,
-            formatTime,
-            getDayCode
-          );
+          try {
+            await this.computeDailyAttendanceForDay(
+              employeeId,
+              dateStr,
+              timeToMinutes,
+              formatTime,
+              getDayCode,
+              manager
+            );
+          } catch (error: any) {
+            this.logger.error(
+              `Failed to compute daily attendance for user ${employeeId} on ${dateStr}: ${error.message}`
+            );
+          }
         }
       }
-      return;
+      this.logger.log("Daily attendance records computed for affected users.");
+    } catch (error: any) {
+      this.logger.error("Failed to compute daily attendance", error.message);
+      throw error;
     }
-
-    // Optimized path
-    const employeeIds = Array.from(affectedUserDates.keys());
-    for (const employeeId of employeeIds) {
-      const dates = affectedUserDates.get(employeeId);
-      if (!dates) continue;
-
-      for (const dateStr of dates) {
-        await this.computeDailyAttendanceForDay(
-          employeeId,
-          dateStr,
-          timeToMinutes,
-          formatTime,
-          getDayCode
-        );
-      }
-    }
-    this.logger.log("Daily attendance records computed for affected users.");
   }
 
   // Refactored helper to process a single day
@@ -461,12 +543,18 @@ export class V2AttendanceService {
     dateStr: string,
     timeToMinutes: (t: string) => number,
     formatTime: (d: Date) => string,
-    getDayCode: (d: string) => string
+    getDayCode: (d: string) => string,
+    manager?: EntityManager
   ) {
+    const punchRepo = manager ? manager.getRepository(Punch) : this.punchRepo;
+    const dailyAttendanceRepo = manager
+      ? manager.getRepository(DailyAttendance)
+      : this.dailyAttendanceRepo;
+
     const startOfDay = new Date(`${dateStr}T00:00:00+05:30`);
     const endOfDay = new Date(`${dateStr}T23:59:59.999+05:30`);
 
-    const dayPunches = await this.punchRepo.find({
+    const dayPunches = await punchRepo.find({
       where: {
         employee_id: employeeId,
         punch_time: Between(startOfDay, endOfDay),
@@ -503,7 +591,7 @@ export class V2AttendanceService {
     }
 
     // Upsert daily attendance record
-    const existing = await this.dailyAttendanceRepo.findOne({
+    const existing = await dailyAttendanceRepo.findOne({
       where: { employee_id: employeeId, date: dateStr },
     });
 
@@ -514,9 +602,9 @@ export class V2AttendanceService {
       existing.total_minutes = totalMinutes;
       existing.punch_count = punchCount;
       existing.day_code = getDayCode(dateStr);
-      await this.dailyAttendanceRepo.save(existing);
+      await dailyAttendanceRepo.save(existing);
     } else {
-      const record = this.dailyAttendanceRepo.create({
+      const record = dailyAttendanceRepo.create({
         employee_id: employeeId,
         date: dateStr,
         day_code: getDayCode(dateStr),
@@ -526,7 +614,7 @@ export class V2AttendanceService {
         total_minutes: totalMinutes,
         punch_count: punchCount,
       });
-      await this.dailyAttendanceRepo.save(record);
+      await dailyAttendanceRepo.save(record);
     }
   }
 

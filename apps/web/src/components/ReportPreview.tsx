@@ -37,6 +37,7 @@ export default function ReportPreview({ user, dateRange, onClose }: ReportPrevie
             absentDays: user.absentDays,
             incompleteDays: user.incompleteDays,
             totalDays: user.totalDays,
+            compDays: user.compDays,
           },
         });
         setHtml(response.html);
@@ -66,6 +67,7 @@ export default function ReportPreview({ user, dateRange, onClose }: ReportPrevie
           absentDays: user.absentDays,
           incompleteDays: user.incompleteDays,
           totalDays: user.totalDays,
+          compDays: user.compDays,
         },
       });
       

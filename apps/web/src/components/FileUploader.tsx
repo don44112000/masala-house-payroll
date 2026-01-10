@@ -1,9 +1,9 @@
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, FileText, Loader2, CheckCircle, AlertCircle, Users, Calendar } from 'lucide-react';
+import { Upload, FileText, Loader2, CheckCircle, AlertCircle, Users, Calendar, Database } from 'lucide-react';
 import type { AttendanceReport, AttendanceSettings } from '@attendance/shared';
-import { uploadAttendanceFile } from '../services/api';
+import { uploadAttendanceFile, uploadUsersToDb, uploadAttendanceToDb } from '../services/api';
 import { cn } from '../lib/utils';
 
 interface FileUploaderProps {
@@ -322,6 +322,71 @@ export default function FileUploader({ onUploadSuccess, settings }: FileUploader
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* V2 Database Upload Section */}
+      <div className="mt-12 pt-8 border-t border-midnight-800">
+        <h3 className="text-lg font-semibold text-midnight-200 mb-4 flex items-center gap-2">
+          <Database className="w-5 h-5 text-accent-cyan" />
+          Database Upload (V2)
+        </h3>
+        <div className="grid md:grid-cols-2 gap-4">
+          {/* Upload Users to DB */}
+          <div className="p-4 rounded-xl bg-midnight-900/50 border border-midnight-700">
+            <label className="block text-sm text-midnight-300 mb-2">Upload Users to Database</label>
+            <input
+              type="file"
+              accept=".dat"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                try {
+                  const result = await uploadUsersToDb(file);
+                  alert(result.message);
+                } catch (err: unknown) {
+                  const error = err as { message?: string };
+                  alert('Error: ' + (error.message || 'Upload failed'));
+                }
+                e.target.value = '';
+              }}
+              className="block w-full text-sm text-midnight-400
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-lg file:border-0
+                file:text-sm file:font-semibold
+                file:bg-accent-cyan/10 file:text-accent-cyan
+                hover:file:bg-accent-cyan/20
+                cursor-pointer"
+            />
+          </div>
+
+          {/* Upload Attendance to DB */}
+          <div className="p-4 rounded-xl bg-midnight-900/50 border border-midnight-700">
+            <label className="block text-sm text-midnight-300 mb-2">Upload Attendance to Database</label>
+            <input
+              type="file"
+              accept=".dat,.txt,.csv"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                try {
+                  const result = await uploadAttendanceToDb(file);
+                  alert(result.message);
+                } catch (err: unknown) {
+                  const error = err as { message?: string };
+                  alert('Error: ' + (error.message || 'Upload failed'));
+                }
+                e.target.value = '';
+              }}
+              className="block w-full text-sm text-midnight-400
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-lg file:border-0
+                file:text-sm file:font-semibold
+                file:bg-accent-pink/10 file:text-accent-pink
+                hover:file:bg-accent-pink/20
+                cursor-pointer"
+            />
+          </div>
+        </div>
+      </div>
 
       {/* Info text */}
       <p className="text-center text-midnight-500 text-sm mt-6">

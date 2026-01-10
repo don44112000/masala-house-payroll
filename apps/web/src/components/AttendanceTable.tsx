@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, Clock, LogIn, LogOut, AlertTriangle, FileText } from 'lucide-react';
+import { ChevronDown, ChevronUp, Clock, LogIn, LogOut, AlertTriangle, FileText, Plus, Trash2 } from 'lucide-react';
 import type { UserAttendanceSummary, AttendanceSettings, DailyAttendance } from '@attendance/shared';
 import { cn, formatDate, formatTime, formatDuration, getStatusConfig } from '../lib/utils';
 import ReportPreview from './ReportPreview';
+import TimePickerModal from './TimePickerModal';
 
 interface AttendanceTableProps {
   user: UserAttendanceSummary;
   settings: AttendanceSettings;
+  onRefresh?: () => void;
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -23,18 +25,22 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function PunchDetails({ record }: { record: DailyAttendance }) {
+function PunchDetails({ record, onDelete }: { record: DailyAttendance; onDelete: (punchTime: string) => void }) {
+  const [confirmDeleteTime, setConfirmDeleteTime] = useState<string | null>(null);
+
   if (record.punches.length === 0) {
     return <span className="text-midnight-500">No punches recorded</span>;
   }
 
   return (
     <div className="space-y-2">
-      {record.punches.map((punch, idx) => (
+      {record.punches.map((punch, idx) => {
+         const punchId = punch.time; // Use time as ID for UI state
+         return (
         <div
           key={idx}
           className={cn(
-            'flex items-center gap-3 text-sm',
+            'flex items-center gap-3 text-sm group',
             !punch.isPaired && 'bg-accent-orange/10 border border-accent-orange/30 rounded-lg px-3 py-2',
           )}
         >
@@ -62,21 +68,56 @@ function PunchDetails({ record }: { record: DailyAttendance }) {
               Unpaired
             </span>
           )}
+          
+          {/* Delete Action */}
+          <div className="ml-auto flex items-center relative">
+             {confirmDeleteTime === punchId ? (
+                <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 flex items-center gap-2 bg-white border border-midnight-200 shadow-lg rounded-lg px-3 py-1.5 z-10 animate-in fade-in zoom-in-95">
+                   <span className="text-xs font-medium text-midnight-600 whitespace-nowrap">Delete?</span>
+                   <div className="flex items-center gap-1">
+                     <button 
+                        onClick={() => onDelete(`${record.date}T${punch.time}+05:30`)}
+                        className="px-2 py-0.5 text-xs font-bold bg-red-50 text-red-600 hover:bg-red-100 rounded transition-colors"
+                     >
+                        Yes
+                     </button>
+                     <button 
+                        onClick={() => setConfirmDeleteTime(null)}
+                        className="px-2 py-0.5 text-xs font-medium text-midnight-400 hover:text-midnight-600 hover:bg-midnight-50 rounded transition-colors"
+                     >
+                        No
+                     </button>
+                   </div>
+                </div>
+             ) : (
+               <button 
+                 onClick={() => setConfirmDeleteTime(punchId)}
+                 className="p-1.5 bg-white/20 text-red-500 hover:bg-white/40 hover:text-red-600 transition-all rounded shadow-sm border border-midnight-200/10"
+                 title="Delete this punch"
+               >
+                  <Trash2 className="w-3.5 h-3.5" />
+               </button>
+             )}
+          </div>
         </div>
-      ))}
+      )})}
     </div>
   );
 }
 
-export default function AttendanceTable({ user, settings }: AttendanceTableProps) {
+export default function AttendanceTable({ user, settings, onRefresh }: AttendanceTableProps) {
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [showReportPreview, setShowReportPreview] = useState(false);
+  const [confirmCompDate, setConfirmCompDate] = useState<string | null>(null);
+  
+  // State for adding manual punch
+  const [handlingDate, setHandlingDate] = useState<string | null>(null);
 
   const sortedRecords = [...user.dailyRecords].sort((a, b) => {
-    const dateA = new Date(a.date).getTime();
-    const dateB = new Date(b.date).getTime();
-    return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+    return sortOrder === 'asc' 
+      ? a.date.localeCompare(b.date) 
+      : b.date.localeCompare(a.date);
   });
 
   const toggleSort = () => {
@@ -93,9 +134,59 @@ export default function AttendanceTable({ user, settings }: AttendanceTableProps
       : new Date().toISOString().split('T')[0],
   };
 
+  const handleMarkCompOff = async (date: string) => {
+    try {
+      const { markCompOff } = await import('../services/api');
+      const response = await markCompOff(user.userId, date);
+      if (response.success) {
+        setConfirmCompDate(null);
+        if (onRefresh) {
+          onRefresh();
+        } else {
+           window.location.reload();
+        }
+      }
+    } catch (error: any) {
+      alert(error.message || 'Failed to mark as Comp Off');
+    }
+  };
+
+  const handleAddPunch = async (date: string, timeStr: string, isManual: boolean) => {
+    try {
+      const { addPunch } = await import('../services/api');
+      const response = await addPunch(user.userId, date, timeStr, isManual);
+      if (response.success) {
+        setHandlingDate(null);
+        if (onRefresh) {
+          onRefresh();
+        } else {
+          window.location.reload();
+        }
+      }
+    } catch (error: any) {
+      alert(error.message || 'Failed to add punch');
+    }
+  };
+
+  const handleDeletePunch = async (punchTime: string) => {
+    try {
+      const { deletePunch } = await import('../services/api');
+      const response = await deletePunch(user.userId, punchTime);
+      if (response.success) {
+        if (onRefresh) {
+          onRefresh();
+        } else {
+          window.location.reload();
+        }
+      }
+    } catch (error: any) {
+      alert(error.message || 'Failed to delete punch');
+    }
+  };
+
   return (
     <>
-      <div className="glass rounded-2xl overflow-hidden">
+      <div className="glass rounded-2xl overflow-hidden relative">
         <div className="p-6 border-b border-midnight-800">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-midnight-100 flex items-center gap-2">
@@ -217,13 +308,57 @@ export default function AttendanceTable({ user, settings }: AttendanceTableProps
                 {expandedRow === record.date && (
                   <tr key={`${record.date}-details`} className="bg-midnight-900/30">
                     <td colSpan={7} className="px-6 py-4">
-                      <div className="flex items-start gap-8">
+                      <div className="flex items-start justify-between gap-8">
                         <div>
-                          <h4 className="text-sm font-medium text-midnight-300 mb-3">
+                          <h4 className="text-sm font-medium text-midnight-300 mb-3 flex items-center gap-2">
                             All Punches
                           </h4>
-                          <PunchDetails record={record} />
+                          <PunchDetails 
+                            record={record} 
+                            onDelete={(time) => handleDeletePunch(time)}
+                          />
+                          
+                          {/* Add Punch UI */}
+                          <div className="mt-4 pt-3 border-t border-midnight-700/50">
+                            <button
+                              onClick={() => setHandlingDate(record.date)}
+                              className="flex items-center gap-1.5 text-xs font-medium text-accent-cyan hover:text-accent-cyan/80 transition-colors"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                              Add Punch
+                            </button>
+                          </div>
                         </div>
+                        
+                        {/* Actions */}
+                        {record.status === 'ABSENT' && (
+                          <div className="flex items-center gap-4">
+                            {confirmCompDate === record.date ? (
+                              <div className="flex items-center gap-3 bg-midnight-800 p-1.5 rounded-lg border border-accent-yellow/20 animate-in fade-in slide-in-from-right-4 duration-200">
+                                <span className="text-sm text-midnight-300 pl-2">Are you sure?</span>
+                                <button
+                                  onClick={() => handleMarkCompOff(record.date)}
+                                  className="px-3 py-1.5 rounded-md bg-accent-yellow text-midnight-900 text-xs font-bold hover:bg-accent-yellow/90 transition-colors"
+                                >
+                                  Yes
+                                </button>
+                                <button
+                                  onClick={() => setConfirmCompDate(null)}
+                                  className="px-3 py-1.5 rounded-md bg-midnight-700 text-midnight-300 text-xs font-medium hover:bg-midnight-600 transition-colors"
+                                >
+                                  No
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setConfirmCompDate(record.date)}
+                                className="px-4 py-2 rounded-lg bg-accent-yellow/10 hover:bg-accent-yellow/20 text-accent-yellow border border-accent-yellow/20 transition-all text-sm font-medium"
+                              >
+                                Mark as Comp Off
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -265,6 +400,14 @@ export default function AttendanceTable({ user, settings }: AttendanceTableProps
         </div>
       </div>
     </div>
+
+    {/* Time Picker Modal */}
+    {handlingDate && (
+      <TimePickerModal
+        onClose={() => setHandlingDate(null)}
+        onSave={(time, isManual) => handleAddPunch(handlingDate, time, isManual)}
+      />
+    )}
 
     {/* Report Preview Modal */}
     {showReportPreview && (

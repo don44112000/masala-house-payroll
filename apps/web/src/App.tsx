@@ -10,8 +10,10 @@ import AttendanceChart from './components/AttendanceChart';
 import SettingsPanel from './components/SettingsPanel';
 import MonthYearPicker from './components/MonthYearPicker';
 import Header from './components/Header';
+import V2Dashboard from './components/V2Dashboard';
 
 function App() {
+  const [showV2, setShowV2] = useState(false);
   const [report, setReport] = useState<AttendanceReport | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [settings, setSettings] = useState<AttendanceSettings>(DEFAULT_SETTINGS);
@@ -92,6 +94,11 @@ function App() {
 
   const selectedUser = filteredReport?.users.find((u) => u.userId === selectedUserId);
 
+  // Render V2 Dashboard if toggled
+  if (showV2) {
+    return <V2Dashboard onBack={() => setShowV2(false)} />;
+  }
+
   return (
     <div className="min-h-screen bg-midnight-950 bg-grid-pattern">
       {/* Ambient background effects */}
@@ -107,6 +114,20 @@ function App() {
           onSettingsClick={() => setShowSettings(true)}
           hasReport={!!report}
         />
+
+        {/* V2 Dashboard Toggle Button */}
+        <motion.div 
+          className="flex justify-end mb-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          <button
+            onClick={() => setShowV2(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-accent-cyan/20 to-accent-pink/20 border border-accent-cyan/30 text-accent-cyan hover:border-accent-cyan/50 transition-all"
+          >
+            <span className="text-sm font-medium">Switch to V2 Dashboard (Database)</span>
+          </button>
+        </motion.div>
 
         <AnimatePresence mode="wait">
           {!report ? (
@@ -203,3 +224,4 @@ function App() {
 }
 
 export default App;
+

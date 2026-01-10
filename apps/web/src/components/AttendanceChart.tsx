@@ -21,30 +21,36 @@ export default function AttendanceChart({ user }: AttendanceChartProps) {
   // Prepare chart data - show hours worked per day
   // For ABSENT days, show a small bar (0.5h) to make it visible
   const chartData = user.dailyRecords.map((record) => {
-    const dateObj = new Date(record.date);
+    // Parse day and date from data without Date object if possible
+    const dayName = record.dayCode 
+      ? record.dayCode.charAt(0) + record.dayCode.slice(1).toLowerCase() 
+      : new Date(record.date).toLocaleDateString('en-US', { weekday: 'short' });
+      
+    const dateNum = parseInt(record.date.split('-')[2], 10);
+    const dayOfWeek = record.dayCode 
+      ? ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].indexOf(record.dayCode) 
+      : new Date(record.date).getDay();
+
     return {
-      // Short day for label
-      dayName: dateObj.toLocaleDateString('en-US', { weekday: 'short' }),
+      // Short day for label: "Mon"
+      dayName,
       // Date number
-      dateNum: dateObj.getDate(),
+      dateNum,
       // Combined label for x-axis: "Mon\n01"
-      label: `${dateObj.toLocaleDateString('en-US', { weekday: 'short' })}\n${String(dateObj.getDate()).padStart(2, '0')}`,
-      // Full date with day for tooltip: "Monday, Jan 1"
-      fullDateDisplay: dateObj.toLocaleDateString('en-US', {
-        weekday: 'long',
-        month: 'short',
-        day: 'numeric',
-      }),
-      hours: record.status === 'ABSENT' ? 0.5 : record.totalHours + record.totalMinutes / 60,
-      actualHours: record.totalHours + record.totalMinutes / 60,
+      label: `${dayName}\n${String(dateNum).padStart(2, '0')}`,
+      // Full date with day for tooltip: "Monday, Jan 1" - computed lazily if needed or kept simple
+      // We'll keep the full display for tooltip but optimize its creation via a simple formatter or keep it as is since tooltip is on hover
+      fullDateDisplay: record.date, // Store raw date string, format in Tooltip
+      hours: (record.status === 'ABSENT' || (record.status === 'INCOMPLETE' && (record.totalHours + record.totalMinutes / 60) === 0)) ? 0.5 : record.status === 'COMP' ? 12 : record.totalHours + record.totalMinutes / 60,
+      actualHours: record.status === 'COMP' ? 0 : record.totalHours + record.totalMinutes / 60,
       status: record.status,
       fullDate: record.date,
-      isWeekend: dateObj.getDay() === 0 || dateObj.getDay() === 6,
+      isWeekend: dayOfWeek === 0 || dayOfWeek === 6,
     };
   });
 
-  // Sort by date
-  chartData.sort((a, b) => new Date(a.fullDate).getTime() - new Date(b.fullDate).getTime());
+  // Sort by date string directly (YYYY-MM-DD is lexicographically sortable)
+  chartData.sort((a, b) => a.fullDate.localeCompare(b.fullDate));
 
   // Calculate dynamic width based on number of days (minimum 50px per bar)
   const minBarWidth = 42;
@@ -67,7 +73,7 @@ export default function AttendanceChart({ user }: AttendanceChartProps) {
                 <Clock className="w-3.5 h-3.5" /> Hours Worked
               </span>
               <span className="text-accent-cyan font-mono font-bold text-lg">
-                {data.actualHours.toFixed(1)}h
+                {data.status === 'COMP' ? 'Full Day (Comp Off)' : `${data.actualHours.toFixed(1)}h`}
               </span>
             </div>
             <div className="flex items-center justify-between gap-4">

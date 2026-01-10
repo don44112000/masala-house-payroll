@@ -16,6 +16,7 @@ export interface RawAttendanceRecord {
 export interface DailyAttendance {
   userId: number;
   date: string; // YYYY-MM-DD
+  dayCode?: string; // MON, TUE etc.
   firstIn: string | null; // HH:MM:SS
   lastOut: string | null; // HH:MM:SS
   totalHours: number;
@@ -32,9 +33,10 @@ export interface DailyAttendance {
  */
 export interface PunchRecord {
   time: string; // HH:MM:SS
-  type: 'IN' | 'OUT' | 'UNKNOWN';
+  type: "IN" | "OUT" | "UNKNOWN";
   verificationType: string;
   isPaired: boolean; // Whether this punch has a matching pair
+  isEdited?: boolean; // Whether this punch was manually edited/added
 }
 
 /**
@@ -43,7 +45,7 @@ export interface PunchRecord {
  * ABSENT: No punches (0)
  * INCOMPLETE: Odd number of punches (1, 3, 5...)
  */
-export type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'INCOMPLETE' | 'COMP';
+export type AttendanceStatus = "PRESENT" | "ABSENT" | "INCOMPLETE" | "COMP";
 
 /**
  * User attendance summary
@@ -95,8 +97,8 @@ export interface AttendanceSettings {
  * Default attendance settings
  */
 export const DEFAULT_SETTINGS: AttendanceSettings = {
-  workStartTime: '09:30',
-  workEndTime: '18:30',
+  workStartTime: "09:30",
+  workEndTime: "18:30",
   lateThresholdMinutes: 15,
   earlyOutThresholdMinutes: 15,
 };
@@ -115,7 +117,7 @@ export interface UploadResponse {
  * Processing progress event (for SSE)
  */
 export interface ProcessingProgress {
-  stage: 'uploading' | 'parsing' | 'calculating' | 'complete' | 'error';
+  stage: "uploading" | "parsing" | "calculating" | "complete" | "error";
   progress: number; // 0-100
   message: string;
   recordsProcessed?: number;

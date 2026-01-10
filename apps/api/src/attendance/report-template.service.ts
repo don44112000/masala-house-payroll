@@ -1,7 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
-import type { DailyAttendance, PunchRecord } from '@attendance/shared';
-import * as fs from 'fs';
-import * as path from 'path';
+import { Injectable, Logger } from "@nestjs/common";
+import type { DailyAttendance, PunchRecord } from "@attendance/shared";
+import * as fs from "fs";
+import * as path from "path";
 
 interface ReportData {
   userId: number;
@@ -36,7 +36,7 @@ export class ReportTemplateService {
       return { inDuration: 0, outDuration: 0 };
     }
 
-    const sortedPunches = [...punches].sort((a, b) => 
+    const sortedPunches = [...punches].sort((a, b) =>
       a.time.localeCompare(b.time)
     );
 
@@ -59,41 +59,43 @@ export class ReportTemplateService {
   }
 
   private timeToMinutes(timeStr: string): number {
-    const [hours, minutes] = timeStr.split(':').map(Number);
+    const [hours, minutes] = timeStr.split(":").map(Number);
     return hours * 60 + minutes;
   }
 
   private formatDurationHHMM(totalMinutes: number): string {
-    if (totalMinutes <= 0) return '00:00';
+    if (totalMinutes <= 0) return "00:00";
     const hours = Math.floor(totalMinutes / 60);
     const mins = totalMinutes % 60;
-    return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+    return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
   }
 
   private formatPunchRecords(punches: PunchRecord[]): string {
-    if (punches.length === 0) return '';
-    
-    const sortedPunches = [...punches].sort((a, b) => 
+    if (punches.length === 0) return "";
+
+    const sortedPunches = [...punches].sort((a, b) =>
       a.time.localeCompare(b.time)
     );
 
     return sortedPunches
       .map((punch, idx) => {
-        const inOut = idx % 2 === 0 ? 'in' : 'out';
+        const inOut = idx % 2 === 0 ? "in" : "out";
         const time = punch.time.substring(0, 5); // HH:MM
-        return `<span class="punch-tag ${inOut}">${time} <span class="type">(${inOut.toUpperCase()})</span></span>`;
+        const editedClass = punch.isEdited ? " edited" : "";
+        const titleAttr = punch.isEdited ? ' title="Manual Entry"' : "";
+        return `<span class="punch-tag ${inOut}${editedClass}"${titleAttr}>${time} <span class="type">(${inOut.toUpperCase()})</span></span>`;
       })
-      .join('');
+      .join("");
   }
 
   private formatDateForDisplay(dateStr: string): string {
     const date = new Date(dateStr);
-    const dayDate = date.toLocaleDateString('en-GB', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
+    const dayDate = date.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
     });
-    const weekday = date.toLocaleDateString('en-GB', { weekday: 'short' });
+    const weekday = date.toLocaleDateString("en-GB", { weekday: "short" });
     return `${dayDate} <span class="weekday">(${weekday})</span>`;
   }
 
@@ -101,21 +103,29 @@ export class ReportTemplateService {
     const fromDate = new Date(from);
     const toDate = new Date(to);
     const formatPart = (d: Date) =>
-      d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+      d.toLocaleDateString("en-US", {
+        month: "short",
+        day: "2-digit",
+        year: "numeric",
+      });
     return `${formatPart(fromDate)} - ${formatPart(toDate)}`;
   }
 
   private getCurrentTimestamp(): string {
     const now = new Date();
-    return now.toLocaleDateString('en-US', {
-      month: 'short',
-      day: '2-digit',
-      year: 'numeric',
-    }) + ' ' + now.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true,
-    });
+    return (
+      now.toLocaleDateString("en-US", {
+        month: "short",
+        day: "2-digit",
+        year: "numeric",
+      }) +
+      " " +
+      now.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      })
+    );
   }
 
   private getLogoBase64(): string {
@@ -123,23 +133,23 @@ export class ReportTemplateService {
       // Assuming the API runs from apps/api or root, try to locate the logo in apps/web/public/logo.png
       // We'll search a few common relative paths
       const possiblePaths = [
-        path.join(process.cwd(), 'apps/web/public/logo.png'),        // From root
-        path.join(process.cwd(), '../web/public/logo.png'),          // From apps/api
-        path.join(__dirname, '../../../web/public/logo.png'),        // From dist/attendance/
-        path.join(__dirname, '../../../../apps/web/public/logo.png') // From dist/attendance/
+        path.join(process.cwd(), "apps/web/public/logo.png"), // From root
+        path.join(process.cwd(), "../web/public/logo.png"), // From apps/api
+        path.join(__dirname, "../../../web/public/logo.png"), // From dist/attendance/
+        path.join(__dirname, "../../../../apps/web/public/logo.png"), // From dist/attendance/
       ];
 
       for (const p of possiblePaths) {
         if (fs.existsSync(p)) {
           const bitmap = fs.readFileSync(p);
-          return `data:image/png;base64,${bitmap.toString('base64')}`;
+          return `data:image/png;base64,${bitmap.toString("base64")}`;
         }
       }
-      this.logger.warn('Logo file not found in common locations');
-      return '';
+      this.logger.warn("Logo file not found in common locations");
+      return "";
     } catch (error) {
-      this.logger.error('Failed to load logo image', error);
-      return '';
+      this.logger.error("Failed to load logo image", error);
+      return "";
     }
   }
 
@@ -155,14 +165,17 @@ export class ReportTemplateService {
     let localPresentDays = 0;
     let localAbsentDays = 0;
     let localIncompleteDays = 0;
+    let localCompDays = 0;
 
-    sortedRecords.forEach(record => {
+    sortedRecords.forEach((record) => {
       const { punches } = record;
       const { inDuration } = this.calculateInOutDuration(punches);
-      
+
       totalMinutes += inDuration;
 
-      if (punches.length === 0) {
+      if (record.status === "COMP") {
+        localCompDays++;
+      } else if (punches.length === 0) {
         localAbsentDays++;
       } else if (punches.length % 2 !== 0) {
         localIncompleteDays++;
@@ -173,7 +186,8 @@ export class ReportTemplateService {
 
     const localTotalHours = Math.floor(totalMinutes / 60);
     const localTotalMins = totalMinutes % 60;
-    const avgDailyMinutes = localPresentDays > 0 ? Math.floor(totalMinutes / localPresentDays) : 0;
+    const avgDailyMinutes =
+      localPresentDays > 0 ? Math.floor(totalMinutes / localPresentDays) : 0;
     const localAvgHours = Math.floor(avgDailyMinutes / 60);
     const localAvgMins = avgDailyMinutes % 60;
 
@@ -181,60 +195,76 @@ export class ReportTemplateService {
     const displayTotalDays = summary?.totalDays ?? sortedRecords.length;
     const displayPresentDays = summary?.presentDays ?? localPresentDays;
     const displayAbsentDays = summary?.absentDays ?? localAbsentDays;
-    const displayIncompleteDays = summary?.incompleteDays ?? localIncompleteDays;
-    const displayCompDays = summary?.compDays ?? 0;
-    
+    const displayIncompleteDays =
+      summary?.incompleteDays ?? localIncompleteDays;
+    const displayCompDays = summary?.compDays ?? localCompDays;
+
     // Default to calculated strings - Use new formatting logic
     // Total Hours
     let totalHoursVal = localTotalHours;
     let totalMinsVal = localTotalMins;
-    
+
     if (summary?.totalHours) {
-        // Expected format "238h 24m"
-        const match = summary.totalHours.match(/(\d+)h (\d+)m/);
-        if (match) {
-            totalHoursVal = parseInt(match[1]);
-            totalMinsVal = parseInt(match[2]);
-        }
+      // Expected format "238h 24m"
+      const match = summary.totalHours.match(/(\d+)h (\d+)m/);
+      if (match) {
+        totalHoursVal = parseInt(match[1]);
+        totalMinsVal = parseInt(match[2]);
+      }
     }
-    
-    const totalHoursMain = `${totalHoursVal}.${String(totalMinsVal).padStart(2, '0')}`;
+
+    const totalHoursMain = `${totalHoursVal}.${String(totalMinsVal).padStart(
+      2,
+      "0"
+    )}`;
     const totalHoursSub = `${totalHoursVal} hours ${totalMinsVal} mins`;
 
     // Avg Hours
-    let avgHoursMain = `${localAvgHours}.${String(localAvgMins).padStart(2, '0')}`;
+    let avgHoursMain = `${localAvgHours}.${String(localAvgMins).padStart(
+      2,
+      "0"
+    )}`;
     let avgHoursSub = `${localAvgHours} hours ${localAvgMins} mins`;
 
     if (summary?.avgHours) {
-        const match = summary.avgHours.match(/(\d+)h (\d+)m/);
-        if (match) {
-             const h = parseInt(match[1]);
-             const m = parseInt(match[2]);
-             avgHoursMain = `${h}.${String(m).padStart(2, '0')}`;
-             avgHoursSub = `${h} hours ${m} mins`;
-        } 
-        else if (!isNaN(parseFloat(summary.avgHours))) {
-             avgHoursMain = summary.avgHours;
-             const parts = summary.avgHours.split('.');
-             const h = parseInt(parts[0]);
-             const m = parts.length > 1 ? parseInt(parts[1]) : 0;
-             avgHoursSub = `${h} hours ${m} mins`;
-        }
+      const match = summary.avgHours.match(/(\d+)h (\d+)m/);
+      if (match) {
+        const h = parseInt(match[1]);
+        const m = parseInt(match[2]);
+        avgHoursMain = `${h}.${String(m).padStart(2, "0")}`;
+        avgHoursSub = `${h} hours ${m} mins`;
+      } else if (!isNaN(parseFloat(summary.avgHours))) {
+        avgHoursMain = summary.avgHours;
+        const parts = summary.avgHours.split(".");
+        const h = parseInt(parts[0]);
+        const m = parts.length > 1 ? parseInt(parts[1]) : 0;
+        avgHoursSub = `${h} hours ${m} mins`;
+      }
     }
 
     // Generate table rows
-    let tableRows = '';
+    let tableRows = "";
     sortedRecords.forEach((record, idx) => {
-      const { inDuration, outDuration } = this.calculateInOutDuration(record.punches);
+      const { inDuration, outDuration } = this.calculateInOutDuration(
+        record.punches
+      );
       const punchRecords = this.formatPunchRecords(record.punches);
       const displayDate = this.formatDateForDisplay(record.date);
-      
-      const isAbsent = record.punches.length === 0;
-      const isIncomplete = record.punches.length > 0 && record.punches.length % 2 !== 0;
-      
-      let statusClass = '';
-      if (isAbsent) statusClass = 'row-absent';
-      if (isIncomplete) statusClass = 'row-incomplete';
+
+      const isAbsent =
+        record.status === "ABSENT" ||
+        (!record.status && record.punches.length === 0);
+      const isIncomplete =
+        record.status === "INCOMPLETE" ||
+        (!record.status &&
+          record.punches.length > 0 &&
+          record.punches.length % 2 !== 0);
+      const isComp = record.status === "COMP";
+
+      let statusClass = "";
+      if (isAbsent) statusClass = "row-absent";
+      if (isIncomplete) statusClass = "row-incomplete";
+      if (isComp) statusClass = "row-comp";
 
       const creativeAbsent = `
         <div class="status-pill absent">
@@ -250,20 +280,34 @@ export class ReportTemplateService {
         </div>
       `;
 
+      const creativeComp = `
+        <div class="status-pill comp">
+          <span class="icon">★</span>
+          <span>Comp Off</span>
+        </div>
+      `;
+
       let punchContent = punchRecords;
       if (isAbsent) punchContent = creativeAbsent;
+      if (isComp) punchContent = creativeComp;
       if (isIncomplete && !punchRecords) punchContent = creativeIncomplete;
-      
+
       if (isIncomplete && punchContent !== creativeIncomplete) {
         punchContent += ` <span class="status-pill incomplete-mini">Missing Out</span>`;
       }
 
       tableRows += `
         <tr class="${statusClass}">
-          <td class="text-center font-mono text-xs text-gray-500">${idx + 1}</td>
+          <td class="text-center font-mono text-xs text-gray-500">${
+            idx + 1
+          }</td>
           <td class="font-medium text-gray-900">${displayDate}</td>
-          <td class="text-center font-bold text-slate-700">${inDuration > 0 ? this.formatDurationHHMM(inDuration) : '-'}</td>
-          <td class="text-center text-gray-500">${outDuration > 0 ? this.formatDurationHHMM(outDuration) : '-'}</td>
+          <td class="text-center font-bold text-slate-700">${
+            inDuration > 0 ? this.formatDurationHHMM(inDuration) : "-"
+          }</td>
+          <td class="text-center text-gray-500">${
+            outDuration > 0 ? this.formatDurationHHMM(outDuration) : "-"
+          }</td>
           <td class="punch-cell">
             <div class="punch-list">
               ${punchContent}
@@ -275,10 +319,12 @@ export class ReportTemplateService {
 
     // Construct Filename: employeeId.Name-mmmYY-report.pdf
     const fromDate = new Date(dateRange.from);
-    const monthShort = fromDate.toLocaleDateString('en-US', { month: 'short' }).toLowerCase();
+    const monthShort = fromDate
+      .toLocaleDateString("en-US", { month: "short" })
+      .toLowerCase();
     const yearShort = String(fromDate.getFullYear()).slice(-2);
     // Remove spaces from name for filename safety but keep basic structure
-    const safeName = userName.replace(/[^a-zA-Z0-9]/g, ''); 
+    const safeName = userName.replace(/[^a-zA-Z0-9]/g, "");
     const filename = `${userId}.${safeName}-${monthShort}${yearShort}-report.html`;
 
     const logoBase64 = this.getLogoBase64();
@@ -468,8 +514,9 @@ export class ReportTemplateService {
     .weekday { color: var(--secondary); font-size: 10px; margin-left: 4px; }
     
     /* Status Styling */
-    .row-absent td { background-color: #fcfcfc; color: var(--secondary); }
-    .row-incomplete td { background-color: #fffbf7; }
+    .row-absent td { background-color: #fef2f2; color: var(--secondary); }
+    .row-incomplete td { background-color: #fff7ed; }
+    .row-comp td { background-color: #fefce8; }
 
     /* Punch Tags */
     .punch-list { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
@@ -486,7 +533,9 @@ export class ReportTemplateService {
     .punch-tag .type { font-size: 9px; color: var(--secondary); margin-left: 2px; }
     
     .punch-tag.in { border-left: 2px solid var(--success); }
+
     .punch-tag.out { border-left: 2px solid var(--danger); }
+    .punch-tag.edited { background-color: #fefce8; border-color: #fca5a5; border-style: dashed; }
 
     /* Status Pills */
     .status-pill {
@@ -525,7 +574,11 @@ export class ReportTemplateService {
   <div class="container">
     <header class="header">
       <div class="brand-section">
-        ${logoBase64 ? `<img src="${logoBase64}" alt="Logo" class="brand-logo" />` : ''}
+        ${
+          logoBase64
+            ? `<img src="${logoBase64}" alt="Logo" class="brand-logo" />`
+            : ""
+        }
         <div class="brand-text">
           <h1>Lokhande's Masala House</h1>
         </div>
@@ -534,7 +587,10 @@ export class ReportTemplateService {
       <div class="report-meta">
         <div class="report-title">Monthly Attendance</div>
         <div class="meta-data">
-          <div class="meta-period">${this.formatDateRange(dateRange.from, dateRange.to)}</div>
+          <div class="meta-period">${this.formatDateRange(
+            dateRange.from,
+            dateRange.to
+          )}</div>
           <div class="meta-generated">Generated: ${this.getCurrentTimestamp()}</div>
         </div>
       </div>

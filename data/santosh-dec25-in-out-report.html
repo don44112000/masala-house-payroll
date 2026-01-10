@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Attendance Report - Santosh</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      line-height: 1.4;
+      color: #333;
+      background: #fff;
+      padding: 20px;
+    }
+    .report-container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #333;
+    }
+    .header h1 {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    .header .date-range {
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      padding: 5px 0;
+      border-bottom: 1px solid #999;
+    }
+    .summary-box {
+      background: #f5f5f5;
+      border: 1px solid #ccc;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 4px;
+    }
+    .summary-box h2 {
+      font-size: 14px;
+      margin-bottom: 10px;
+      color: #333;
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .summary-item {
+      padding: 8px;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .summary-item .label {
+      font-size: 10px;
+      color: #666;
+      text-transform: uppercase;
+    }
+    .summary-item .value {
+      font-size: 16px;
+      font-weight: bold;
+      color: #333;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    th, td {
+      border: 1px solid #333;
+      padding: 6px 8px;
+      text-align: left;
+    }
+    th {
+      background: #e9e9e9;
+      font-weight: bold;
+    }
+    .date-header td {
+      background: #d0e8ff;
+      font-weight: normal;
+      border-bottom: none;
+    }
+    .dept-row td {
+      background: #f0f0f0;
+      border-top: none;
+      border-bottom: none;
+    }
+    .column-headers th {
+      background: #e0e0e0;
+      font-size: 11px;
+    }
+    .data-row td {
+      background: #fff;
+    }
+    .punch-records {
+      font-family: monospace;
+      font-size: 10px;
+      word-break: break-all;
+    }
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      padding-top: 10px;
+      border-top: 1px solid #999;
+      font-size: 11px;
+      color: #666;
+    }
+    @media print {
+      body {
+        padding: 0;
+      }
+      .report-container {
+        max-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="report-container">
+    <div class="header">
+      <h1>Daily Attendance Report (In Out Duration Report)</h1>
+      <div class="date-range">Dec 01, 2025 To Dec 31, 2025</div>
+      <div class="meta-row">
+        <span><strong>Company:</strong> Masala House</span>
+        <span><strong>Printed On:</strong> Jan 10, 2026 17:45</span>
+      </div>
+    </div>
+
+    <div class="summary-box">
+      <h2>Monthly Summary for Santosh (ID: 5)</h2>
+      <div class="summary-grid">
+        <div class="summary-item">
+          <div class="label">Total Days</div>
+          <div class="value">31</div>
+        </div>
+        <div class="summary-item">
+          <div class="label">Total Working Hours</div>
+          <div class="value">238h 24m</div>
+        </div>
+        <div class="summary-item">
+          <div class="label">Avg Hours/Day</div>
+          <div class="value">7.7h</div>
+        </div>
+      </div>
+    </div>
+
+    <table>
+      <tbody>
+        
+        <tr class="date-header">
+          <td colspan="6"><strong>Attendance Date:</strong> 01-Dec-2025</td>
+        </tr>
+        <tr class="dept-row">
+          <td colspan="6"><strong>Department:</strong> Default</td>
+        </tr>
+        <tr class="column-headers">
+          <th>SNo.</th>
+          <th>Emp Code</th>
+          <th>Name</th>
+          <th>In Duration (In Hrs)</th>
+          <th>Out Duration (In Hrs)</th>
+          <th>Punch Records</th>
+        </tr>
+        <tr class="data-row">
+          <td>1</td>
+          <td>5</td>
+          <td>Santosh</td>
+          <td>11:39</td>
+          <td>00:00</td>
+          <td class="punch-records">09:47:in(Fingerprint),21:26:out(Fingerprint),</td>
+        </tr>
+      
+        <tr class="date-header">
+          <td colspan="6"><strong>Attendance Date:</strong> 02-Dec-2025</td>
+        </tr>
+        <tr class="dept-row">
+          <td colspan="6"><strong>Department:</strong> Default</td>
+        </tr>
+        <tr class="column-headers">
+          <th>SNo.</th>
+          <th>Emp Code</th>
+          <th>Name</th>
+          <th>In Duration (In Hrs)</th>
+          <th>Out Duration (In Hrs)</th>
+          <th>Punch Records</th>
+        </tr>
+        <tr class="data-row">
+          <td>2</td>
+          <td>5</td>
+          <td>Santosh</td>
+          <td>00:00</td>
+          <td>00:00</td>
+          <td class="punch-records">-</td>
+        </tr>
+      
+        <tr class="date-header">
+          <td colspan="6"><strong>Attendance Date:</strong> 03-Dec-2025</td>
+        </tr>
+        <tr class="dept-row">
+          <td colspan="6"><strong>Department:</strong> Default</td>
+        </tr>
+        <tr class="column-headers">
+          <th>SNo.</th>
+          <th>Emp Code</th>
+          <th>Name</th>
+          <th>In Duration (In Hrs)</th>
+          <th>Out Duration (In Hrs)</th>
+          <th>Punch Records</th>
+        </tr>
+        <tr class="data-row">
+          <td>3</td>
+          <td>5</td>
+          <td>Santosh</td>
+          <td>11:59</td>
+          <td>00:00</td>
+          <td class="punch-records">09:34:in(Fingerprint),21:33:out(Fingerprint),</td>
+        </tr>
+      
+        <tr class="date-header">
+          <td colspan="6"><strong>Attendance Date:</strong> 04-Dec-2025</td>
+        </tr>
+        <tr class="dept-row">
+          <td colspan="6"><strong>Department:</strong> Default</td>
+        </tr>
+        <tr class="column-headers">
+          <th>SNo.</th>
+          <th>Emp Code</th>
+          <th>Name</th>
+          <th>In Duration (In Hrs)</th>
+          <th>Out Duration (In Hrs)</th>
+          <th>Punch Records</th>
+        </tr>
+        <tr class="data-row">
+          <td>4</td>
+          <td>5</td>
+          <td>Santosh</td>
+          <td>11:12</td>
+          <td>00:33</td>
+          <td class="punch-records">09:46:in(Fingerprint),14:34:out(Fingerprint),15:07:in(Fingerprint),21:31:out(Fingerprint),</td>
+        </tr>
+      
+        <tr class="date-header">
+          <td colspan="6"><strong>Attendance Date:</strong> 05-Dec-2025</td>
+        </tr>
+        <tr class="dept-row">
+          <td colspan="6"><strong>Department:</strong> Default</td>
+        </tr>
+        <tr class="column-headers">
+          <th>SNo.</th>
+          <th>Emp Code</th>
+          <th>Name</th>
+          <th>In Duration (In Hrs)</th>
+          <th>Out Duration (In Hrs)</th>
+          <th>Punch Records</th>
+        </tr>
+        <tr class="data-row">
+          <td>5</td>
+          <td>5</td>
+          <td>Santosh</td>
+          <td>12:03</td>
+          <td>00:00</td>
+          <td class="punch-records">09:34:in(Fingerprint),21:37:out(Fingerprint),</td>
+        </tr>
+      
+        <tr class="date-header">
+          <td colspan="6"><strong>Attendance Date:</strong> 06-Dec-2025</td>
+        </tr>
+        <tr class="dept-row">
+          <td colspan="6"><strong>Department:</strong> Default</td>
+        </tr>
+        <tr class="column-headers">
+          <th>SNo.</th>
+          <th>Emp Code</th>
+          <th>Name</th>
+          <th>In Duration (In Hrs)</th>
+          <th>Out Duration (In Hrs)</th>
+          <th>Punch Records</th>
+        </tr>
+        <tr class="data-row">
+          <td>6</td>
+          <td>5</td>
+          <td>Santosh</td>
+          <td>12:12</td>
+          <td>00:00</td>
+          <td class="punch-records">09:28:in(Fingerprint),21:40:out(Fingerprint),</td>
+        </tr>
+      
+        <tr class="date-header">
+          <td colspan="6"><strong>Attendance Date:</strong> 07-Dec-2025</td>
+        </tr>
+        <tr class="dept-row">
+          <td colspan="6"><strong>Department:</strong> Default</td>
+        </tr>
+        <tr class="column-headers">
+          <th>SNo.</th>
+          <th>Emp Code</th>
+          <th>Name</th>
+          <th>In Duration (In Hrs)</th>
+          <th>Out Duration (In Hrs)</th>
+          <th>Punch Records</th>
+        </tr>
+        <tr class="data-row">
+          <td>7</td>
+          <td>5</td>
+          <td>Santosh</td>
+          <td>11:28</td>
+          <td>00:33</td>
+          <td class="punch-records">09:33:in(Fingerprint),13:38:out(Fingerprint),14:11:in(Fingerprint),21:34:out(Fingerprint),</td>
+        </tr>
+      
+        <tr class="date-header">
+          <td colspan="6"><strong>Attendance Date:</strong> 08-Dec-2025</td>
+        </tr>
+        <tr class="dept-row">
+          <td colspan="6"><strong>Department:</strong> Default</td>
+        </tr>
+        <tr class="column-headers">
+          <th>SNo.</th>
+          <th>Emp Code</th>
+          <th>Name</th>
+          <th>In Duration (In Hrs)</th>
+          <th>Out Duration (In Hrs)</th>
+          <th>Punch Records</th>
+        </tr>
+        <tr class="data-row">
+          <td>8</td>
+          <td>5</td>
+          <td>Santosh</td>
+          <td>11:56</td>
+          <td>00:00</td>
+          <td class="punch-records">09:30:in(Fingerprint),21:26:out(Fingerprint),</td>
+        </tr>
+      
+        <tr class="date-header">
+          <td colspan="6"><strong>Attendance Date:</strong> 09-Dec-2025</td>
+        </tr>
+        <tr class="dept-row">
+          <td colspan="6"><strong>Department:</strong> Default</td>
+        </tr>
+        <tr class="column-headers">
+          <th>SNo.</th>
+          <th>Emp Code</th>
+          <th>Name</th>
+          <th>In Duration (In Hrs)</th>
+          <th>Out Duration (In Hrs)</th>
+          <th>Punch Records</th>
+        </tr>
+        <tr class="data-row">
+          <td>9</td>
+          <td>5</td>
+          <td>Santosh</td>
+          <td>00:00</td>
+          <td>00:00</td>
+          <td class="punch-records">-</td>
+        </tr>
+      
+        <tr class="date-header">
+          <td colspan="6"><strong>Attendance Date:</strong> 10-Dec-2025</td>
+        </tr>
+        <tr class="dept-row">
+          <td colspan="6"><strong>Department:</strong> Default</td>
+        </tr>
+        <tr class="column-headers">
+          <th>SNo.</th>
+          <th>Emp Code</th>
+          <th>Name</th>
+          <th>In Duration (In Hrs)</th>
+          <th>Out Duration (In Hrs)</th>
+          <th>Punch Records</th>
+        </tr>
+        <tr class="data-row">
+          <td>10</td>
+          <td>5</td>
+          <td>Santosh</td>
+          <td>12:08</td>
+          <td>00:00</td>
+          <td class="punch-records">09:34:in(Fingerprint),21:42:out(Fingerprint),</td>
+        </tr>
+      
+        <tr class="date-header">
+          <td colspan="6"><strong>Attendance Date:</strong> 11-Dec-2025</td>
+        </tr>
+        <tr class="dept-row">
+          <td colspan="6"><strong>Department:</strong> Default</td>
+        </tr>
+        <tr class="column-headers">
+          <th>SNo.</th>
+          <th>Emp Code</th>
+          <th>Name</th>
+          <th>In Duration (In Hrs)</th>
+          <th>Out Duration (In Hrs)</th>
+          <th>Punch Records</th>
+        </tr>
+        <tr class="data-row">
+          <td>11</td>
+          <td>5</td>
+          <td>Santosh</td>
+          <td>11:00</td>
+          <td>00:00</td>
+          <td class="punch-records">09:31:in(Fingerprint),20:31:out(Fingerprint),</td>
+        </tr>
+      
+        <tr class="date-header">
+          <td colspan="6"><strong>Attendance Date:</strong> 12-Dec-2025</td>
+        </tr>
+        <tr class="dept-row">
+          <td colspan="6"><strong>Department:</strong> Default</td>
+        </tr>
+        <tr class="column-headers">
+          <th>SNo.</th>
+          <th>Emp Code</th>
+          <th>Name</th>
+          <th>In Duration (In Hrs)</th>
+          <th>Out Duration (In Hrs)</th>
+          <th>Punch Records</th>
+        </tr>
+        <tr class="data-row">
+          <td>12</td>
+          <td>5</td>
+          <td>Santosh</td>
+          <td>12:06</td>
+          <td>00:00</td>
+          <td class="punch-records">09:32:in(Fingerprint),21:38:out(Fingerprint),</td>
+        </tr>
+      
+        <tr class="date-header">
+          <td colspan="6"><strong>Attendance Date:</strong> 13-Dec-2025</td>
+        </tr>
+        <tr class="dept-row">
+          <td colspan="6"><strong>Department:</strong> Default</td>
+        </tr>
+        <tr class="column-headers">
+          <th>SNo.</th>
+          <th>Emp Code</th>
+          <th>Name</th>
+          <th>In Duration (In Hrs)</th>
+          <th>Out Duration (In Hrs)</th>
+          <th>Punch Records</th>
+        </tr>
+        <tr class="data-row">
+          <td>13</td>
+          <td>5</td>
+          <td>Santosh</td>
+          <td>11:45</td>
+          <td>00:00</td>
+          <td class="punch-records">09:44:in(Fingerprint),21:29:out(Fingerprint),</td>
+        </tr>
+      
+        <tr class="date-header">
+          <td colspan="6"><strong>Attendance Date:</strong> 14-Dec-2025</td>
+        </tr>
+        <tr class="dept-row">
+          <td colspan="6"><strong>Department:</strong> Default</td>
+        </tr>
+        <tr class="column-headers">
+          <th>SNo.</th>
+          <th>Emp Code</th>
+          <th>Name</th>
+          <th>In Duration (In Hrs)</th>
+          <th>Out Duration (In Hrs)</th>
+          <th>Punch Records</th>
+        </tr>
+        <tr class="data-row">
+          <td>14</td>
+          <td>5</td>
+          <td>Santosh</td>
+          <td>12:05</td>
+          <td>00:00</td>
+          <td class="punch-records">09:28:in(Fingerprint),21:33:out(Fingerprint),</td>
+        </tr>
+      
+        <tr class="date-header">
+          <td colspan="6"><strong>Attendance Date:</strong> 15-Dec-2025</td>
+        </tr>
+        <tr class="dept-row">
+          <td colspan="6"><strong>Department:</strong> Default</td>
+        </tr>
+        <tr class="column-headers">
+          <th>SNo.</th>
+          <th>Emp Code</th>
+          <th>Name</th>
+          <th>In Duration (In Hrs)</th>
+          <th>Out Duration (In Hrs)</th>
+          <th>Punch Records</th>
+        </tr>
+        <tr class="data-row">
+          <td>15</td>
+          <td>5</td>
+          <td>Santosh</td>
+          <td>04:27</td>
+          <td>00:00</td>
+          <td class="punch-records">09:43:in(Fingerprint),14:10:out(Fingerprint),</td>
+        </tr>
+      
+        <tr class="date-header">
+          <td colspan="6"><strong>Attendance Date:</strong> 16-Dec-2025</td>
+        </tr>
+        <tr class="dept-row">
+          <td colspan="6"><strong>Department:</strong> Default</td>
+        </tr>
+        <tr class="column-headers">
+          <th>SNo.</th>
+          <th>Emp Code</th>
+          <th>Name</th>
+          <th>In Duration (In Hrs)</th>
+          <th>Out Duration (In Hrs)</th>
+          <th>Punch Records</th>
+        </tr>
+        <tr class="data-row">
+          <td>16</td>
+          <td>5</td>
+          <td>Santosh</td>
+          <td>00:00</td>
+          <td>00:00</td>
+          <td class="punch-records">-</td>
+        </tr>
+      
+        <tr class="date-header">
+          <td colspan="6"><strong>Attendance Date:</strong> 17-Dec-2025</td>
+        </tr>
+        <tr class="dept-row">
+          <td colspan="6"><strong>Department:</strong> Default</td>
+        </tr>
+        <tr class="column-headers">
+          <th>SNo.</th>
+          <th>Emp Code</th>
+          <th>Name</th>
+          <th>In Duration (In Hrs)</th>
+          <th>Out Duration (In Hrs)</th>
+          <th>Punch Records</th>
+        </tr>
+        <tr class="data-row">
+          <td>17</td>
+          <td>5</td>
+          <td>Santosh</td>
+          <td>00:00</td>
+          <td>00:00</td>
+          <td class="punch-records">-</td>
+        </tr>
+      
+        <tr class="date-header">
+          <td colspan="6"><strong>Attendance Date:</strong> 18-Dec-2025</td>
+        </tr>
+        <tr class="dept-row">
+          <td colspan="6"><strong>Department:</strong> Default</td>
+        </tr>
+        <tr class="column-headers">
+          <th>SNo.</th>
+          <th>Emp Code</th>
+          <th>Name</th>
+          <th>In Duration (In Hrs)</th>
+          <th>Out Duration (In Hrs)</th>
+          <th>Punch Records</th>
+        </tr>
+        <tr class="data-row">
+          <td>18</td>
+          <td>5</td>
+          <td>Santosh</td>
+          <td>00:00</td>
+          <td>00:00</td>
+          <td class="punch-records">-</td>
+        </tr>
+      
+        <tr class="date-header">
+          <td colspan="6"><strong>Attendance Date:</strong> 19-Dec-2025</td>
+        </tr>
+        <tr class="dept-row">
+          <td colspan="6"><strong>Department:</strong> Default</td>
+        </tr>
+        <tr class="column-headers">
+          <th>SNo.</th>
+          <th>Emp Code</th>
+          <th>Name</th>
+          <th>In Duration (In Hrs)</th>
+          <th>Out Duration (In Hrs)</th>
+          <th>Punch Records</th>
+        </tr>
+        <tr class="data-row">
+          <td>19</td>
+          <td>5</td>
+          <td>Santosh</td>
+          <td>00:00</td>
+          <td>00:00</td>
+          <td class="punch-records">-</td>
+        </tr>
+      
+        <tr class="date-header">
+          <td colspan="6"><strong>Attendance Date:</strong> 20-Dec-2025</td>
+        </tr>
+        <tr class="dept-row">
+          <td colspan="6"><strong>Department:</strong> Default</td>
+        </tr>
+        <tr class="column-headers">
+          <th>SNo.</th>
+          <th>Emp Code</th>
+          <th>Name</th>
+          <th>In Duration (In Hrs)</th>
+          <th>Out Duration (In Hrs)</th>
+          <th>Punch Records</th>
+        </tr>
+        <tr class="data-row">
+          <td>20</td>
+          <td>5</td>
+          <td>Santosh</td>
+          <td>00:00</td>
+          <td>00:00</td>
+          <td class="punch-records">-</td>
+        </tr>
+      
+        <tr class="date-header">
+          <td colspan="6"><strong>Attendance Date:</strong> 21-Dec-2025</td>
+        </tr>
+        <tr class="dept-row">
+          <td colspan="6"><strong>Department:</strong> Default</td>
+        </tr>
+        <tr class="column-headers">
+          <th>SNo.</th>
+          <th>Emp Code</th>
+          <th>Name</th>
+          <th>In Duration (In Hrs)</th>
+          <th>Out Duration (In Hrs)</th>
+          <th>Punch Records</th>
+        </tr>
+        <tr class="data-row">
+          <td>21</td>
+          <td>5</td>
+          <td>Santosh</td>
+          <td>00:00</td>
+          <td>00:00</td>
+          <td class="punch-records">-</td>
+        </tr>
+      
+        <tr class="date-header">
+          <td colspan="6"><strong>Attendance Date:</strong> 22-Dec-2025</td>
+        </tr>
+        <tr class="dept-row">
+          <td colspan="6"><strong>Department:</strong> Default</td>
+        </tr>
+        <tr class="column-headers">
+          <th>SNo.</th>
+          <th>Emp Code</th>
+          <th>Name</th>
+          <th>In Duration (In Hrs)</th>
+          <th>Out Duration (In Hrs)</th>
+          <th>Punch Records</th>
+        </tr>
+        <tr class="data-row">
+          <td>22</td>
+          <td>5</td>
+          <td>Santosh</td>
+          <td>11:00</td>
+          <td>00:00</td>
+          <td class="punch-records">09:37:in(Fingerprint),20:37:out(Fingerprint),</td>
+        </tr>
+      
+        <tr class="date-header">
+          <td colspan="6"><strong>Attendance Date:</strong> 23-Dec-2025</td>
+        </tr>
+        <tr class="dept-row">
+          <td colspan="6"><strong>Department:</strong> Default</td>
+        </tr>
+        <tr class="column-headers">
+          <th>SNo.</th>
+          <th>Emp Code</th>
+          <th>Name</th>
+          <th>In Duration (In Hrs)</th>
+          <th>Out Duration (In Hrs)</th>
+          <th>Punch Records</th>
+        </tr>
+        <tr class="data-row">
+          <td>23</td>
+          <td>5</td>
+          <td>Santosh</td>
+          <td>00:00</td>
+          <td>00:00</td>
+          <td class="punch-records">-</td>
+        </tr>
+      
+        <tr class="date-header">
+          <td colspan="6"><strong>Attendance Date:</strong> 24-Dec-2025</td>
+        </tr>
+        <tr class="dept-row">
+          <td colspan="6"><strong>Department:</strong> Default</td>
+        </tr>
+        <tr class="column-headers">
+          <th>SNo.</th>
+          <th>Emp Code</th>
+          <th>Name</th>
+          <th>In Duration (In Hrs)</th>
+          <th>Out Duration (In Hrs)</th>
+          <th>Punch Records</th>
+        </tr>
+        <tr class="data-row">
+          <td>24</td>
+          <td>5</td>
+          <td>Santosh</td>
+          <td>11:53</td>
+          <td>00:00</td>
+          <td class="punch-records">09:31:in(Fingerprint),21:24:out(Fingerprint),</td>
+        </tr>
+      
+        <tr class="date-header">
+          <td colspan="6"><strong>Attendance Date:</strong> 25-Dec-2025</td>
+        </tr>
+        <tr class="dept-row">
+          <td colspan="6"><strong>Department:</strong> Default</td>
+        </tr>
+        <tr class="column-headers">
+          <th>SNo.</th>
+          <th>Emp Code</th>
+          <th>Name</th>
+          <th>In Duration (In Hrs)</th>
+          <th>Out Duration (In Hrs)</th>
+          <th>Punch Records</th>
+        </tr>
+        <tr class="data-row">
+          <td>25</td>
+          <td>5</td>
+          <td>Santosh</td>
+          <td>11:15</td>
+          <td>00:38</td>
+          <td class="punch-records">09:20:in(Fingerprint),14:19:out(Fingerprint),14:57:in(Fingerprint),21:13:out(Fingerprint),</td>
+        </tr>
+      
+        <tr class="date-header">
+          <td colspan="6"><strong>Attendance Date:</strong> 26-Dec-2025</td>
+        </tr>
+        <tr class="dept-row">
+          <td colspan="6"><strong>Department:</strong> Default</td>
+        </tr>
+        <tr class="column-headers">
+          <th>SNo.</th>
+          <th>Emp Code</th>
+          <th>Name</th>
+          <th>In Duration (In Hrs)</th>
+          <th>Out Duration (In Hrs)</th>
+          <th>Punch Records</th>
+        </tr>
+        <tr class="data-row">
+          <td>26</td>
+          <td>5</td>
+          <td>Santosh</td>
+          <td>12:04</td>
+          <td>00:00</td>
+          <td class="punch-records">09:23:in(Fingerprint),21:27:out(Fingerprint),</td>
+        </tr>
+      
+        <tr class="date-header">
+          <td colspan="6"><strong>Attendance Date:</strong> 27-Dec-2025</td>
+        </tr>
+        <tr class="dept-row">
+          <td colspan="6"><strong>Department:</strong> Default</td>
+        </tr>
+        <tr class="column-headers">
+          <th>SNo.</th>
+          <th>Emp Code</th>
+          <th>Name</th>
+          <th>In Duration (In Hrs)</th>
+          <th>Out Duration (In Hrs)</th>
+          <th>Punch Records</th>
+        </tr>
+        <tr class="data-row">
+          <td>27</td>
+          <td>5</td>
+          <td>Santosh</td>
+          <td>11:59</td>
+          <td>00:00</td>
+          <td class="punch-records">09:22:in(Fingerprint),21:21:out(Fingerprint),</td>
+        </tr>
+      
+        <tr class="date-header">
+          <td colspan="6"><strong>Attendance Date:</strong> 28-Dec-2025</td>
+        </tr>
+        <tr class="dept-row">
+          <td colspan="6"><strong>Department:</strong> Default</td>
+        </tr>
+        <tr class="column-headers">
+          <th>SNo.</th>
+          <th>Emp Code</th>
+          <th>Name</th>
+          <th>In Duration (In Hrs)</th>
+          <th>Out Duration (In Hrs)</th>
+          <th>Punch Records</th>
+        </tr>
+        <tr class="data-row">
+          <td>28</td>
+          <td>5</td>
+          <td>Santosh</td>
+          <td>10:17</td>
+          <td>01:41</td>
+          <td class="punch-records">09:17:in(Fingerprint),12:37:out(Fingerprint),14:18:in(Fingerprint),21:15:out(Fingerprint),</td>
+        </tr>
+      
+        <tr class="date-header">
+          <td colspan="6"><strong>Attendance Date:</strong> 29-Dec-2025</td>
+        </tr>
+        <tr class="dept-row">
+          <td colspan="6"><strong>Department:</strong> Default</td>
+        </tr>
+        <tr class="column-headers">
+          <th>SNo.</th>
+          <th>Emp Code</th>
+          <th>Name</th>
+          <th>In Duration (In Hrs)</th>
+          <th>Out Duration (In Hrs)</th>
+          <th>Punch Records</th>
+        </tr>
+        <tr class="data-row">
+          <td>29</td>
+          <td>5</td>
+          <td>Santosh</td>
+          <td>11:56</td>
+          <td>00:00</td>
+          <td class="punch-records">09:16:in(Fingerprint),21:12:out(Fingerprint),</td>
+        </tr>
+      
+        <tr class="date-header">
+          <td colspan="6"><strong>Attendance Date:</strong> 30-Dec-2025</td>
+        </tr>
+        <tr class="dept-row">
+          <td colspan="6"><strong>Department:</strong> Default</td>
+        </tr>
+        <tr class="column-headers">
+          <th>SNo.</th>
+          <th>Emp Code</th>
+          <th>Name</th>
+          <th>In Duration (In Hrs)</th>
+          <th>Out Duration (In Hrs)</th>
+          <th>Punch Records</th>
+        </tr>
+        <tr class="data-row">
+          <td>30</td>
+          <td>5</td>
+          <td>Santosh</td>
+          <td>00:00</td>
+          <td>00:00</td>
+          <td class="punch-records">-</td>
+        </tr>
+      
+        <tr class="date-header">
+          <td colspan="6"><strong>Attendance Date:</strong> 31-Dec-2025</td>
+        </tr>
+        <tr class="dept-row">
+          <td colspan="6"><strong>Department:</strong> Default</td>
+        </tr>
+        <tr class="column-headers">
+          <th>SNo.</th>
+          <th>Emp Code</th>
+          <th>Name</th>
+          <th>In Duration (In Hrs)</th>
+          <th>Out Duration (In Hrs)</th>
+          <th>Punch Records</th>
+        </tr>
+        <tr class="data-row">
+          <td>31</td>
+          <td>5</td>
+          <td>Santosh</td>
+          <td>12:00</td>
+          <td>00:00</td>
+          <td class="punch-records">09:21:in(Fingerprint),21:21:out(Fingerprint),</td>
+        </tr>
+      
+      </tbody>
+    </table>
+
+    <div class="footer">
+      <span>Generated By: Masala House Attendance System</span>
+      <span>Page 1</span>
+    </div>
+  </div>
+</body>
+</html>

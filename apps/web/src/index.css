@@ -1,0 +1,113 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Outfit', system-ui, sans-serif;
+  background: #0f0e24;
+  color: #e0e8ff;
+  min-height: 100vh;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1936;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #4f4ce5;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #6371f1;
+}
+
+/* Background pattern */
+.bg-grid-pattern {
+  background-image: 
+    linear-gradient(to right, rgba(99, 113, 241, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(99, 113, 241, 0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Glow effects */
+.glow-cyan {
+  box-shadow: 0 0 20px rgba(0, 245, 212, 0.3);
+}
+
+.glow-pink {
+  box-shadow: 0 0 20px rgba(247, 37, 133, 0.3);
+}
+
+/* Glass effect */
+.glass {
+  background: rgba(15, 14, 36, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(99, 113, 241, 0.2);
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #00f5d4 0%, #6371f1 50%, #f72585 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Status colors */
+.status-present { color: #00f5d4; background: rgba(0, 245, 212, 0.1); }
+.status-absent { color: #f72585; background: rgba(247, 37, 133, 0.1); }
+.status-half-day { color: #fee440; background: rgba(254, 228, 64, 0.1); }
+.status-incomplete { color: #ff7b00; background: rgba(255, 123, 0, 0.1); }
+
+/* Table styles */
+.table-row-hover:hover {
+  background: rgba(99, 113, 241, 0.1);
+}
+
+/* Dropzone */
+.dropzone-active {
+  border-color: #00f5d4;
+  background: rgba(0, 245, 212, 0.05);
+}
+
+/* Animation delays for staggered reveals */
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+.delay-500 { animation-delay: 500ms; }
+
+/* Loading shimmer */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(99, 113, 241, 0.1) 0%,
+    rgba(99, 113, 241, 0.2) 50%,
+    rgba(99, 113, 241, 0.1) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}

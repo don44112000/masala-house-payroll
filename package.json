@@ -1,0 +1,24 @@
+{
+  "name": "attendance-system",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Attendance processing system with NestJS + React",
+  "scripts": {
+    "build:shared": "pnpm --filter @attendance/shared build",
+    "dev": "pnpm build:shared && turbo run dev",
+    "build": "turbo run build",
+    "dev:api": "pnpm build:shared && pnpm --filter @attendance/api dev",
+    "dev:web": "pnpm build:shared && pnpm --filter @attendance/web dev",
+    "build:api": "pnpm --filter @attendance/api build",
+    "build:web": "pnpm --filter @attendance/web build",
+    "start:api": "pnpm --filter @attendance/api start:prod",
+    "clean": "turbo run clean && rm -rf node_modules"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0"
+  },
+  "packageManager": "pnpm@8.15.0",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

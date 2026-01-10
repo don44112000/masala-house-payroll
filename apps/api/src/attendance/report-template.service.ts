@@ -1,5 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import type { DailyAttendance, PunchRecord } from '@attendance/shared';
+import * as fs from 'fs';
+import * as path from 'path';
 
 interface ReportData {
   userId: number;
@@ -15,6 +17,7 @@ interface ReportData {
     presentDays?: number;
     absentDays?: number;
     incompleteDays?: number;
+    compDays?: number;
     totalDays?: number;
   };
 }
@@ -26,6 +29,8 @@ interface DurationResult {
 
 @Injectable()
 export class ReportTemplateService {
+  private readonly logger = new Logger(ReportTemplateService.name);
+
   private calculateInOutDuration(punches: PunchRecord[]): DurationResult {
     if (punches.length < 2) {
       return { inDuration: 0, outDuration: 0 };
@@ -113,6 +118,31 @@ export class ReportTemplateService {
     });
   }
 
+  private getLogoBase64(): string {
+    try {
+      // Assuming the API runs from apps/api or root, try to locate the logo in apps/web/public/logo.png
+      // We'll search a few common relative paths
+      const possiblePaths = [
+        path.join(process.cwd(), 'apps/web/public/logo.png'),        // From root
+        path.join(process.cwd(), '../web/public/logo.png'),          // From apps/api
+        path.join(__dirname, '../../../web/public/logo.png'),        // From dist/attendance/
+        path.join(__dirname, '../../../../apps/web/public/logo.png') // From dist/attendance/
+      ];
+
+      for (const p of possiblePaths) {
+        if (fs.existsSync(p)) {
+          const bitmap = fs.readFileSync(p);
+          return `data:image/png;base64,${bitmap.toString('base64')}`;
+        }
+      }
+      this.logger.warn('Logo file not found in common locations');
+      return '';
+    } catch (error) {
+      this.logger.error('Failed to load logo image', error);
+      return '';
+    }
+  }
+
   generateHtmlReport(data: ReportData): { html: string; filename: string } {
     const { userId, userName, dailyRecords, dateRange, summary } = data;
 
@@ -152,30 +182,12 @@ export class ReportTemplateService {
     const displayPresentDays = summary?.presentDays ?? localPresentDays;
     const displayAbsentDays = summary?.absentDays ?? localAbsentDays;
     const displayIncompleteDays = summary?.incompleteDays ?? localIncompleteDays;
+    const displayCompDays = summary?.compDays ?? 0;
     
     // Default to calculated strings - Use new formatting logic
-    // Format: "238.24" (Large) and "238 hours 24 mins" (Small)
-    
     // Total Hours
     let totalHoursVal = localTotalHours;
     let totalMinsVal = localTotalMins;
-    
-    // Parse from summary if available
-    // Helper to parse "238h 24m" -> {h: 238, m: 24} if needed
-    // But since we control the input, let's just use the values passed in
-    // However, summary keys are strings? 
-    // Actually, report-template service receives exact strings from frontend in "summary" as per previous step
-    // But now we need "238.24" separate from "238 hours..."
-    // Let's redefine summary in DTO? Or just parse the raw numbers if we can passed them differently.
-    
-    // Actually, frontend passes specific formatted strings now: "238h 24m"
-    // I should probably change the frontend to pass RAW numbers in summary, or
-    // modify the backend `GenerateReportDto` to accept numbers in `summary` to formatted them here.
-    // OR just parse "238h 24m".
-    
-    // Let's assume we parse "238h 24m" back to numbers for flexibility
-    // Or better, let's update frontend (next step) to pass raw numbers if possible?
-    // No, I can parse it here easily.
     
     if (summary?.totalHours) {
         // Expected format "238h 24m"
@@ -189,13 +201,11 @@ export class ReportTemplateService {
     const totalHoursMain = `${totalHoursVal}.${String(totalMinsVal).padStart(2, '0')}`;
     const totalHoursSub = `${totalHoursVal} hours ${totalMinsVal} mins`;
 
-
     // Avg Hours
     let avgHoursMain = `${localAvgHours}.${String(localAvgMins).padStart(2, '0')}`;
     let avgHoursSub = `${localAvgHours} hours ${localAvgMins} mins`;
 
     if (summary?.avgHours) {
-        // Check for "XH YM" format first
         const match = summary.avgHours.match(/(\d+)h (\d+)m/);
         if (match) {
              const h = parseInt(match[1]);
@@ -203,18 +213,11 @@ export class ReportTemplateService {
              avgHoursMain = `${h}.${String(m).padStart(2, '0')}`;
              avgHoursSub = `${h} hours ${m} mins`;
         } 
-        // Ensure we handle direct decimal strings or plain numbers if passed as string
         else if (!isNaN(parseFloat(summary.avgHours))) {
-             avgHoursMain = summary.avgHours; // Use exact API return value "11.35"
-             
-             // User wants "11.35" -> "11 hours 35 mins" (Literal interpretation of decimal as minutes)
+             avgHoursMain = summary.avgHours;
              const parts = summary.avgHours.split('.');
              const h = parseInt(parts[0]);
              const m = parts.length > 1 ? parseInt(parts[1]) : 0;
-             // Ensure 2 digits for mins if simple string concat (though parseInt handles it)
-             // But treating "11.5" as 5 mins or 50? 
-             // "11.35" -> 35. "11.5" -> 5. 
-             // If they send 11.35, it's distinct.
              avgHoursSub = `${h} hours ${m} mins`;
         }
     }
@@ -278,6 +281,8 @@ export class ReportTemplateService {
     const safeName = userName.replace(/[^a-zA-Z0-9]/g, ''); 
     const filename = `${userId}.${safeName}-${monthShort}${yearShort}-report.html`;
 
+    const logoBase64 = this.getLogoBase64();
+
     const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -312,19 +317,73 @@ export class ReportTemplateService {
       padding: 15mm;
     }
 
-    /* Header */
+    /* Header - Creative Modern */
     .header {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      margin-bottom: 25px;
-      padding-bottom: 20px;
-      border-bottom: 2px solid var(--primary);
+      align-items: flex-end; /* Bottom align for a solid base feel */
+      padding: 10px 0 5px 0; /* Reduced padding */
+      border-bottom: 3px solid var(--primary); /* requested separator */
+      margin-bottom: 40px;
+      position: relative;
     }
-    .brand h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
-    .brand .subtitle { font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--secondary); letter-spacing: 1px; }
-    .meta { text-align: right; font-size: 11px; color: var(--secondary); }
-    .meta strong { color: var(--primary); font-weight: 600; }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .brand-logo {
+      height: 110px; 
+      width: auto;
+      object-fit: contain;
+      /* Visually crop top/bottom whitespace */
+      margin-top: -20px;
+      margin-bottom: -20px;
+      
+      /* Drop shadow for depth */
+      filter: drop-shadow(0 4px 6px -1px rgb(0 0 0 / 0.1));
+    }
+
+    .brand-text h1 {
+      font-size: 24px; /* Smaller brand name */
+      font-weight: 800;
+      line-height: 1.2;
+      color: var(--primary);
+      letter-spacing: -0.5px;
+      margin-bottom: 0;
+    }
+
+    .report-meta {
+      text-align: right;
+    }
+
+    .report-title {
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--secondary);
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+
+    .meta-data {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    
+    .meta-period {
+      font-size: 13px; /* Bigger Period */
+      color: var(--primary);
+      font-weight: 600;
+    }
+    
+    .meta-generated {
+      font-size: 10px;
+      color: var(--secondary);
+    }
 
     /* Summary Grid */
     .summary-container {
@@ -349,7 +408,7 @@ export class ReportTemplateService {
 
     .stats-grid-days {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(5, 1fr);
       gap: 15px;
       margin-bottom: 15px;
     }
@@ -376,7 +435,8 @@ export class ReportTemplateService {
     
     .mini-stat.present .value { color: var(--success); }
     .mini-stat.absent .value { color: var(--danger); }
-    .mini-stat.incomplete .value { color: var(--warning); }
+    .mini-stat.incomplete .value { color: #60a5fa; }
+    .mini-stat.comp .value { color: #fbbf24; }
 
     .hour-stat {
       display: flex;
@@ -464,13 +524,19 @@ export class ReportTemplateService {
 <body>
   <div class="container">
     <header class="header">
-      <div class="brand">
-        <h1>Masala House</h1>
-        <div class="subtitle">Monthly Attendance Report</div>
+      <div class="brand-section">
+        ${logoBase64 ? `<img src="${logoBase64}" alt="Logo" class="brand-logo" />` : ''}
+        <div class="brand-text">
+          <h1>Lokhande's Masala House</h1>
+        </div>
       </div>
-      <div class="meta">
-        <div>Generated on <strong>${this.getCurrentTimestamp()}</strong></div>
-        <div>Range: <strong>${this.formatDateRange(dateRange.from, dateRange.to)}</strong></div>
+      
+      <div class="report-meta">
+        <div class="report-title">Monthly Attendance</div>
+        <div class="meta-data">
+          <div class="meta-period">${this.formatDateRange(dateRange.from, dateRange.to)}</div>
+          <div class="meta-generated">Generated: ${this.getCurrentTimestamp()}</div>
+        </div>
       </div>
     </header>
 
@@ -499,6 +565,10 @@ export class ReportTemplateService {
           <div class="label">Incomplete</div>
           <div class="value">${displayIncompleteDays}</div>
         </div>
+        <div class="mini-stat comp">
+          <div class="label">Comp Off</div>
+          <div class="value">${displayCompDays}</div>
+        </div>
       </div>
 
       <div class="stats-grid-hours">
@@ -520,8 +590,8 @@ export class ReportTemplateService {
         <tr>
           <th width="5%" class="text-center">#</th>
           <th width="22%">Date</th>
-          <th width="12%" class="text-center">Work Hrs</th>
-          <th width="12%" class="text-center">Break Hrs</th>
+          <th width="12%" class="text-center">In Duration</th>
+          <th width="12%" class="text-center">Out Duration</th>
           <th>Punch Log</th>
         </tr>
       </thead>

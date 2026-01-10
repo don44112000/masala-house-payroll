@@ -171,12 +171,16 @@ export default function AttendanceChart({ user }: AttendanceChartProps) {
                   <stop offset="100%" stopColor="#22c55e" stopOpacity={0.7} />
                 </linearGradient>
                 <linearGradient id="incompleteGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#fbbf24" stopOpacity={0.9} />
-                  <stop offset="100%" stopColor="#f59e0b" stopOpacity={0.7} />
+                  <stop offset="0%" stopColor="#60a5fa" stopOpacity={0.9} />
+                  <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.7} />
                 </linearGradient>
                 <linearGradient id="absentGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#f72585" stopOpacity={0.4} />
                   <stop offset="100%" stopColor="#f72585" stopOpacity={0.2} />
+                </linearGradient>
+                <linearGradient id="compGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#fbbf24" stopOpacity={0.9} />
+                  <stop offset="100%" stopColor="#f59e0b" stopOpacity={0.7} />
                 </linearGradient>
               </defs>
               
@@ -243,6 +247,8 @@ export default function AttendanceChart({ user }: AttendanceChartProps) {
                         ? 'url(#absentGradient)'
                         : entry.status === 'INCOMPLETE'
                         ? 'url(#incompleteGradient)'
+                        : entry.status === 'COMP'
+                        ? 'url(#compGradient)'
                         : 'url(#presentGradient)'
                     }
                     style={{
@@ -258,7 +264,7 @@ export default function AttendanceChart({ user }: AttendanceChartProps) {
 
       {/* Legend */}
       <div className="flex flex-wrap items-center justify-center gap-6 mt-5 pt-4 border-t border-midnight-800/50">
-        {['PRESENT', 'INCOMPLETE', 'ABSENT'].map((status) => {
+        {['PRESENT', 'COMP', 'INCOMPLETE', 'ABSENT'].map((status) => {
           const config = getStatusConfig(status);
           const count = chartData.filter(d => d.status === status).length;
           return (
@@ -269,6 +275,8 @@ export default function AttendanceChart({ user }: AttendanceChartProps) {
                   background: status === 'PRESENT' 
                     ? 'linear-gradient(135deg, #4ade80, #22c55e)'
                     : status === 'INCOMPLETE'
+                    ? 'linear-gradient(135deg, #60a5fa, #3b82f6)'
+                    : status === 'COMP'
                     ? 'linear-gradient(135deg, #fbbf24, #f59e0b)'
                     : 'linear-gradient(135deg, rgba(247, 37, 133, 0.4), rgba(247, 37, 133, 0.2))',
                 }}

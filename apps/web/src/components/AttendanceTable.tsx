@@ -70,7 +70,7 @@ function PunchDetails({ record }: { record: DailyAttendance }) {
 
 export default function AttendanceTable({ user, settings }: AttendanceTableProps) {
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [showReportPreview, setShowReportPreview] = useState(false);
 
   const sortedRecords = [...user.dailyRecords].sort((a, b) => {
@@ -241,6 +241,11 @@ export default function AttendanceTable({ user, settings }: AttendanceTableProps
             <div className="w-3 h-3 rounded-full bg-accent-cyan" />
             <span className="text-midnight-400">Present:</span>
             <span className="text-midnight-100 font-medium">{user.presentDays}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-accent-cyan" />
+            <span className="text-midnight-400">Comp Off:</span>
+            <span className="text-midnight-100 font-medium">{user.compDays}</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-accent-orange" />

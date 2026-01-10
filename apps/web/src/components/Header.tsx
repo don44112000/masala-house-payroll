@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Clock, Settings, RotateCcw } from 'lucide-react';
+import { Settings, RotateCcw } from 'lucide-react';
 
 interface HeaderProps {
   onReset: () => void;
@@ -14,16 +14,18 @@ export default function Header({ onReset, onSettingsClick, hasReport }: HeaderPr
       animate={{ opacity: 1, y: 0 }}
       className="flex items-center justify-between mb-8"
     >
-      <div className="flex items-center gap-4">
-        <div className="p-3 rounded-2xl bg-gradient-to-br from-accent-cyan/20 to-midnight-600/20 border border-accent-cyan/30">
-          <Clock className="w-8 h-8 text-accent-cyan" />
-        </div>
+      <div className="flex items-center gap-5">
+        <img 
+          src="/logo.png" 
+          alt="Lokhande's Masala House" 
+          className="w-40 h-40 object-contain drop-shadow-2xl"
+        /> 
         <div>
-          <h1 className="text-3xl font-bold font-display gradient-text">
-            Attendance Processor
+          <h1 className="text-4xl font-bold font-display text-white tracking-tight">
+            Lokhande's Masala House
           </h1>
-          <p className="text-midnight-300 text-sm mt-1">
-            Upload your .dat file and analyze attendance data
+          <p className="text-midnight-300 text-sm mt-1 font-medium tracking-wide">
+            Attendance & Payroll Management System
           </p>
         </div>
       </div>

@@ -16,7 +16,8 @@ export function getStatusConfig(status: string) {
   const configs: Record<string, { label: string; class: string; color: string }> = {
     PRESENT: { label: 'Present', class: 'status-present', color: '#00f5d4' },
     ABSENT: { label: 'Absent', class: 'status-absent', color: '#f72585' },
-    INCOMPLETE: { label: 'Incomplete', class: 'status-incomplete', color: '#ff7b00' },
+    INCOMPLETE: { label: 'Incomplete', class: 'status-incomplete', color: '#60a5fa' },
+    COMP: { label: 'Comp Off', class: 'text-accent-yellow bg-accent-yellow/10 border-accent-yellow/20', color: '#fbbf24' },
   };
   return configs[status] || { label: status, class: '', color: '#888' };
 }

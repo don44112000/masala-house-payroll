@@ -43,7 +43,7 @@ export interface PunchRecord {
  * ABSENT: No punches (0)
  * INCOMPLETE: Odd number of punches (1, 3, 5...)
  */
-export type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'INCOMPLETE';
+export type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'INCOMPLETE' | 'COMP';
 
 /**
  * User attendance summary
@@ -55,6 +55,7 @@ export interface UserAttendanceSummary {
   presentDays: number;
   absentDays: number;
   incompleteDays: number;
+  compDays: number;
   totalWorkingHours: number;
   totalWorkingMinutes: number;
   averageHoursPerDay: number;
@@ -88,8 +89,6 @@ export interface AttendanceSettings {
   workEndTime: string; // HH:MM
   lateThresholdMinutes: number;
   earlyOutThresholdMinutes: number;
-  minHoursForFullDay: number;
-  minHoursForHalfDay: number;
 }
 
 /**
@@ -100,8 +99,6 @@ export const DEFAULT_SETTINGS: AttendanceSettings = {
   workEndTime: '18:30',
   lateThresholdMinutes: 15,
   earlyOutThresholdMinutes: 15,
-  minHoursForFullDay: 8,
-  minHoursForHalfDay: 4,
 };
 
 /**

@@ -152,6 +152,7 @@ export class AttendanceService {
     let presentDays = 0;
     let absentDays = 0;
     let incompleteDays = 0;
+    let compDays = 0;
 
     for (const date of allDates) {
       const dayRecords = dateRecords.get(date);
@@ -192,6 +193,8 @@ export class AttendanceService {
         absentDays++;
       } else if (daily.status === "INCOMPLETE") {
         incompleteDays++;
+      } else if (daily.status === "COMP") {
+        compDays++;
       }
     }
 
@@ -208,6 +211,7 @@ export class AttendanceService {
       presentDays,
       absentDays,
       incompleteDays,
+      compDays,
       totalWorkingHours,
       totalWorkingMinutes: remainingMinutes,
       averageHoursPerDay: Math.round(averageHoursPerDay * 100) / 100,

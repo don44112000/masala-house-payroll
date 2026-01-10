@@ -122,10 +122,10 @@ export class AttendanceController {
         format: 'A4',
         printBackground: true,
         margin: {
-          top: '10mm',
-          bottom: '10mm',
-          left: '10mm',
-          right: '10mm',
+          top: '5mm',
+          bottom: '5mm',
+          left: '5mm',
+          right: '5mm',
         },
       });
 
@@ -180,8 +180,6 @@ export class AttendanceController {
             workEndTime: { type: 'string', example: '18:30' },
             lateThresholdMinutes: { type: 'number', example: 15 },
             earlyOutThresholdMinutes: { type: 'number', example: 15 },
-            minHoursForFullDay: { type: 'number', example: 8 },
-            minHoursForHalfDay: { type: 'number', example: 4 },
           },
         },
       },
@@ -240,11 +238,27 @@ export class AttendanceController {
         );
       }
 
+      // Validate attendance file naming convention (Must start with 'C')
+      if (!attendanceFile.originalname.toUpperCase().startsWith('C')) {
+        throw new HttpException(
+          'Attendance file name must start with "C" (e.g., C001.dat)',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
       // Validate user file type
       const userFileExt = '.' + userFile.originalname.split('.').pop()?.toLowerCase();
       if (userFileExt !== '.dat') {
         throw new HttpException(
           'User file must be a .dat file',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      // Validate user file naming convention (Must start with 'user')
+      if (!userFile.originalname.toLowerCase().startsWith('user')) {
+        throw new HttpException(
+          'User file name must start with "user" (e.g., user.dat)',
           HttpStatus.BAD_REQUEST,
         );
       }

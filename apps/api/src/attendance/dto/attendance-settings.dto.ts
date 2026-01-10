@@ -25,18 +25,4 @@ export class AttendanceSettingsDto {
   @Min(0)
   @Max(120)
   earlyOutThresholdMinutes?: number;
-
-  @ApiPropertyOptional({ example: 8, description: 'Minimum hours for full day' })
-  @IsOptional()
-  @IsNumber()
-  @Min(1)
-  @Max(24)
-  minHoursForFullDay?: number;
-
-  @ApiPropertyOptional({ example: 4, description: 'Minimum hours for half day' })
-  @IsOptional()
-  @IsNumber()
-  @Min(1)
-  @Max(24)
-  minHoursForHalfDay?: number;
 }

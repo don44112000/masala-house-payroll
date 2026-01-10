@@ -48,6 +48,10 @@ export default function FileUploader({ onUploadSuccess, settings }: FileUploader
   const onAttendanceDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (file) {
+      if (!file.name.toUpperCase().startsWith('C')) {
+        setError('Attendance file name must start with "C"');
+        return;
+      }
       setAttendanceFile(file);
       setError(null);
     }
@@ -56,6 +60,10 @@ export default function FileUploader({ onUploadSuccess, settings }: FileUploader
   const onUserDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (file) {
+      if (!file.name.toLowerCase().startsWith('user')) {
+        setError('User file name must start with "user"');
+        return;
+      }
       setUserFile(file);
       setError(null);
     }
@@ -317,7 +325,7 @@ export default function FileUploader({ onUploadSuccess, settings }: FileUploader
 
       {/* Info text */}
       <p className="text-center text-midnight-500 text-sm mt-6">
-        Your files are processed in-memory and never stored on any server
+        Lokhande's Masala House Payroll @2026
       </p>
     </div>
   );

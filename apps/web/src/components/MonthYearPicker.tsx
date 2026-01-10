@@ -56,11 +56,16 @@ export default function MonthYearPicker({
     <div className="max-w-2xl mx-auto mb-6">
       {/* Carousel View */}
       <motion.div
-        className="glass rounded-2xl p-4"
-        layout
+        className="glass rounded-2xl p-4 transition-all duration-300 ease-in-out"
+        /* Removed 'layout' prop to prevent conflicts with height animation */
       >
         {!isExpanded ? (
-          <div className="flex items-center justify-between gap-4">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex items-center justify-between gap-4"
+          >
             {/* Previous Month */}
             <button
               onClick={handlePrevMonth}
@@ -90,7 +95,7 @@ export default function MonthYearPicker({
               <span className="text-sm">{next.month.slice(0, 3)}</span>
               <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </button>
-          </div>
+          </motion.div>
         ) : null}
 
         {/* Expand/Collapse Button */}
@@ -109,16 +114,16 @@ export default function MonthYearPicker({
         </div>
 
         {/* Expanded View */}
-        <AnimatePresence>
+        <AnimatePresence initial={false}>
           {isExpanded && (
             <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
+              initial={{ opacity: 0, height: 0, marginTop: 0 }}
+              animate={{ opacity: 1, height: 'auto', marginTop: 16 }}
+              exit={{ opacity: 0, height: 0, marginTop: 0 }}
+              transition={{ duration: 0.3, ease: 'easeInOut' }}
               className="overflow-hidden"
             >
-              <div className="pt-4 mt-4 border-t border-midnight-800">
+              <div className="pt-4 border-t border-midnight-800">
                 {/* Year Selector */}
                 <div className="flex items-center justify-center gap-4 mb-6">
                   <button

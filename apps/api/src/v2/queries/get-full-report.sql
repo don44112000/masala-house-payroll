@@ -125,6 +125,6 @@ SELECT json_agg(
     'dailyRecords', daily_records
   ) ORDER BY biometric_id
 ) as users,
-(SELECT COUNT(*) FROM daily_attendance WHERE date >= $1::date AND date <= $2::date) as total_records,
+(SELECT COUNT(*) FROM punches WHERE punch_time >= $1::timestamp AND punch_time < ($2::date + 1)::timestamp) as total_records,
 (SELECT COUNT(DISTINCT employee_id) FROM daily_attendance WHERE date >= $1::date AND date <= $2::date) as unique_users
 FROM user_summary;

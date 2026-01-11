@@ -26,6 +26,35 @@ export class V2AttendanceService {
     private readonly dataSource: DataSource
   ) {}
 
+  // IST offset: 5 hours 30 minutes in milliseconds
+  private static readonly IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+
+  /**
+   * Format time to HH:MM:SS in IST timezone (works correctly on any server timezone)
+   */
+  private formatTimeIST(date: Date): string {
+    const istDate = new Date(
+      date.getTime() + V2AttendanceService.IST_OFFSET_MS
+    );
+    const h = istDate.getUTCHours().toString().padStart(2, "0");
+    const m = istDate.getUTCMinutes().toString().padStart(2, "0");
+    const s = istDate.getUTCSeconds().toString().padStart(2, "0");
+    return `${h}:${m}:${s}`;
+  }
+
+  /**
+   * Get date string YYYY-MM-DD in IST timezone (works correctly on any server timezone)
+   */
+  private getDateStringIST(date: Date): string {
+    const istDate = new Date(
+      date.getTime() + V2AttendanceService.IST_OFFSET_MS
+    );
+    const year = istDate.getUTCFullYear();
+    const month = String(istDate.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(istDate.getUTCDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
   /**
    * Upload user data file and upsert employees
    * Format: Fixed-size binary records (64/66/72 bytes) from ZKTeco devices
@@ -219,7 +248,7 @@ export class V2AttendanceService {
           if (!affectedUserDates.has(employee.id)) {
             affectedUserDates.set(employee.id, new Set());
           }
-          const dateStr = parsed.punch_time.toISOString().split("T")[0];
+          const dateStr = this.getDateStringIST(parsed.punch_time);
           affectedUserDates.get(employee.id)!.add(dateStr);
 
           // Try insert - skip if duplicate (unique constraint)
@@ -380,7 +409,7 @@ export class V2AttendanceService {
           // Process all dates found
           const byDate = new Map<string, Punch[]>();
           for (const punch of punches) {
-            const date = punch.punch_time.toISOString().split("T")[0];
+            const date = this.getDateStringIST(punch.punch_time);
             if (!byDate.has(date)) byDate.set(date, []);
             byDate.get(date)!.push(punch);
           }
@@ -466,14 +495,6 @@ export class V2AttendanceService {
         return h * 60 + m;
       };
 
-      // Helper: format time from Date
-      const formatTime = (date: Date): string => {
-        const h = date.getHours().toString().padStart(2, "0");
-        const m = date.getMinutes().toString().padStart(2, "0");
-        const s = date.getSeconds().toString().padStart(2, "0");
-        return `${h}:${m}:${s}`;
-      };
-
       // Helper: get day code (MON, TUE, WED, THU, FRI, SAT, SUN)
       const getDayCode = (dateStr: string): string => {
         const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -490,7 +511,7 @@ export class V2AttendanceService {
             order: { punch_time: "ASC" },
           });
           const dates = new Set<string>(
-            punches.map((p) => p.punch_time.toISOString().split("T")[0])
+            punches.map((p) => this.getDateStringIST(p.punch_time))
           );
 
           for (const dateStr of dates) {
@@ -498,7 +519,6 @@ export class V2AttendanceService {
               employee.id,
               dateStr,
               timeToMinutes,
-              formatTime,
               getDayCode,
               manager
             );
@@ -519,7 +539,6 @@ export class V2AttendanceService {
               employeeId,
               dateStr,
               timeToMinutes,
-              formatTime,
               getDayCode,
               manager
             );
@@ -542,7 +561,6 @@ export class V2AttendanceService {
     employeeId: number,
     dateStr: string,
     timeToMinutes: (t: string) => number,
-    formatTime: (d: Date) => string,
     getDayCode: (d: string) => string,
     manager?: EntityManager
   ) {
@@ -574,17 +592,19 @@ export class V2AttendanceService {
       status = AttendanceStatusEnum.INCOMPLETE;
     }
 
-    // Calculate first in / last out
+    // Calculate first in / last out using IST-aware formatting
     const firstIn =
-      punchCount > 0 ? formatTime(dayPunches[0].punch_time) : null;
+      punchCount > 0 ? this.formatTimeIST(dayPunches[0].punch_time) : null;
     const lastOut =
-      punchCount > 1 ? formatTime(dayPunches[punchCount - 1].punch_time) : null;
+      punchCount > 1
+        ? this.formatTimeIST(dayPunches[punchCount - 1].punch_time)
+        : null;
 
     // Calculate total minutes using pair logic
     let totalMinutes = 0;
     for (let i = 0; i < dayPunches.length - 1; i += 2) {
-      const inTime = formatTime(dayPunches[i].punch_time);
-      const outTime = formatTime(dayPunches[i + 1].punch_time);
+      const inTime = this.formatTimeIST(dayPunches[i].punch_time);
+      const outTime = this.formatTimeIST(dayPunches[i + 1].punch_time);
       const inMin = timeToMinutes(inTime);
       const outMin = timeToMinutes(outTime);
       totalMinutes += Math.max(0, outMin - inMin);
@@ -824,7 +844,7 @@ export class V2AttendanceService {
 
       await manager.remove(Punch, punch);
 
-      const dateStr = punchTime.toISOString().split("T")[0];
+      const dateStr = this.getDateStringIST(punchTime);
       await this.recalculateDay(manager, employee.id, dateStr);
 
       this.logger.log(`Deleted punch for user ${userId} at ${punchTimeStr}`);
@@ -870,12 +890,6 @@ export class V2AttendanceService {
     }
 
     // Helpers
-    const formatTime = (d: Date) => {
-      const h = d.getHours().toString().padStart(2, "0");
-      const m = d.getMinutes().toString().padStart(2, "0");
-      const s = d.getSeconds().toString().padStart(2, "0");
-      return `${h}:${m}:${s}`;
-    };
     const timeToMinutes = (t: string) => {
       const [h, m] = t.split(":").map(Number);
       return h * 60 + m;
@@ -887,14 +901,16 @@ export class V2AttendanceService {
     };
 
     const firstIn =
-      punchCount > 0 ? formatTime(dayPunches[0].punch_time) : null;
+      punchCount > 0 ? this.formatTimeIST(dayPunches[0].punch_time) : null;
     const lastOut =
-      punchCount > 1 ? formatTime(dayPunches[punchCount - 1].punch_time) : null;
+      punchCount > 1
+        ? this.formatTimeIST(dayPunches[punchCount - 1].punch_time)
+        : null;
 
     let totalMinutes = 0;
     for (let i = 0; i < dayPunches.length - 1; i += 2) {
-      const inTime = formatTime(dayPunches[i].punch_time);
-      const outTime = formatTime(dayPunches[i + 1].punch_time);
+      const inTime = this.formatTimeIST(dayPunches[i].punch_time);
+      const outTime = this.formatTimeIST(dayPunches[i + 1].punch_time);
       const inMin = timeToMinutes(inTime);
       const outMin = timeToMinutes(outTime);
       totalMinutes += Math.max(0, outMin - inMin);

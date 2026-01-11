@@ -7,8 +7,6 @@ import { Employee, Punch, DailyAttendance } from "./v2/entities";
 import { ServeStaticModule } from "@nestjs/serve-static";
 import { join } from "path";
 
-import { SpaController } from "./spa.controller";
-
 // In Docker (production), WORKDIR is /app, so paths resolve correctly
 // For local dev, process.cwd() is the monorepo root
 const STATIC_PATH =
@@ -18,9 +16,9 @@ const STATIC_PATH =
 
 @Module({
   imports: [
+    // ServeStaticModule handles static files AND SPA fallback (index.html for unmatched routes)
     ServeStaticModule.forRoot({
       rootPath: STATIC_PATH,
-      serveRoot: "/", // Serve at root URL
       exclude: ["/attendance/(.*)", "/v2/(.*)", "/api/(.*)"],
     }),
     // PostgreSQL database for v2 APIs
@@ -33,12 +31,13 @@ const STATIC_PATH =
       database: process.env.DB_DATABASE || "attendence_db",
       entities: [Employee, Punch, DailyAttendance],
       synchronize: false, // Using manual migrations per user's SQL
+      // SSL: disabled by default (local dev), set DB_SSL=true for cloud databases
       ssl:
-        process.env.DB_SSL === "false" ? false : { rejectUnauthorized: false },
+        process.env.DB_SSL === "true" ? { rejectUnauthorized: false } : false,
     }),
     AttendanceModule,
     V2AttendanceModule,
   ],
-  controllers: [SpaController],
+  controllers: [],
 })
 export class AppModule {}

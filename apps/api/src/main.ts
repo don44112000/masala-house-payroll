@@ -6,17 +6,26 @@ import { AppModule } from "./app.module";
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Enable CORS for frontend (allow multiple dev ports)
+  // Enable CORS - allow all origins in production if CORS_ORIGIN is "*"
+  const corsOrigin = process.env.CORS_ORIGIN;
   app.enableCors({
-    origin: [
-      "http://localhost:5173",
-      "http://localhost:5174",
-      "http://localhost:5175",
-      "http://localhost:5176",
-      "http://localhost:5177",
-      "http://localhost:3000",
-      ...(process.env.CORS_ORIGIN ? [process.env.CORS_ORIGIN] : []),
-    ],
+    origin:
+      corsOrigin === "*"
+        ? true // Allow all origins
+        : corsOrigin
+        ? [
+            ...corsOrigin.split(",").map((o) => o.trim()),
+            "http://localhost:5173",
+            "http://localhost:3000",
+          ]
+        : [
+            "http://localhost:5173",
+            "http://localhost:5174",
+            "http://localhost:5175",
+            "http://localhost:5176",
+            "http://localhost:5177",
+            "http://localhost:3000",
+          ],
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
     credentials: true,
     exposedHeaders: ["Content-Disposition"],

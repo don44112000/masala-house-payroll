@@ -37,6 +37,9 @@ RUN pnpm run build:web
 # "build:api" in root runs "pnpm --filter @attendance/api build"
 RUN pnpm run build:api
 
+# Set environment for production
+ENV NODE_ENV=production
+
 # Set Puppeteer environment variables to use installed Chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium

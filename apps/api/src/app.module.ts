@@ -9,11 +9,19 @@ import { join } from "path";
 
 import { SpaController } from "./spa.controller";
 
+// In Docker (production), WORKDIR is /app, so paths resolve correctly
+// For local dev, process.cwd() is the monorepo root
+const STATIC_PATH =
+  process.env.NODE_ENV === "production"
+    ? "/app/apps/web/dist"
+    : join(process.cwd(), "apps/web/dist");
+
 @Module({
   imports: [
     ServeStaticModule.forRoot({
-      rootPath: join(process.cwd(), "apps/web/dist"),
-      exclude: ["/api/(.*)"],
+      rootPath: STATIC_PATH,
+      serveRoot: "/", // Serve at root URL
+      exclude: ["/attendance/(.*)", "/v2/(.*)", "/api/(.*)"],
     }),
     // PostgreSQL database for v2 APIs
     TypeOrmModule.forRoot({

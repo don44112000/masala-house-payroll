@@ -5,7 +5,9 @@ import type {
   DailyAttendance,
 } from "@attendance/shared";
 
-const API_BASE = import.meta.env.PROD ? "" : "http://localhost:3001";
+const API_BASE =
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.PROD ? "" : "http://localhost:3001");
 
 const api = axios.create({
   baseURL: API_BASE,

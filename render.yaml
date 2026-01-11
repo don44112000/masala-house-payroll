@@ -1,0 +1,49 @@
+services:
+  # --------------------------------------------------------------------------------
+  # 1. API Service (Node.js + Puppeteer via Docker)
+  # --------------------------------------------------------------------------------
+  - type: web
+    name: attendance-api
+    plan: free
+    region: singapore
+    env: docker
+    dockerfilePath: ./Dockerfile
+    numInstances: 1
+    envVars:
+      - key: PORT
+        value: 3001
+      # User handles these in the Dashboard
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_DATABASE
+        sync: false
+      - key: CORS_ORIGIN
+        value: "*" # Update this in Dashboard to your Frontend URL for security
+
+  # --------------------------------------------------------------------------------
+  # 2. Frontend (Static Site)
+  # --------------------------------------------------------------------------------
+  - type: static
+    name: attendance-web
+    plan: free
+    region: singapore
+    env: static
+    buildCommand: pnpm install --no-frozen-lockfile && pnpm run build:web
+    publishDir: apps/web/dist
+    # Crucial for SPA (React Router) to work on refresh
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: attendance-api
+          property: url

@@ -26,15 +26,16 @@ services:
       - key: CORS_ORIGIN
         value: "*" # Update this in Dashboard to your Frontend URL for security
 
-# --------------------------------------------------------------------------------
-# 2. Frontend (Static Site)
-# --------------------------------------------------------------------------------
-staticSites:
-  - name: attendance-web
+  # --------------------------------------------------------------------------------
+  # 2. Frontend (Static Site)
+  # --------------------------------------------------------------------------------
+  - type: web
+    name: attendance-web
     plan: free
-    # region: singapore # Static sites are global CDN-based, no region needed usually, or 'oregon' by default
+    region: singapore
+    env: static
     buildCommand: pnpm install --no-frozen-lockfile && pnpm run build:web
-    publishDir: apps/web/dist
+    staticPublishPath: apps/web/dist
     # Crucial for SPA (React Router) to work on refresh
     routes:
       - type: rewrite

@@ -80,7 +80,7 @@ export async function generateHtmlReport(
   params: GenerateReportParams
 ): Promise<GenerateReportResponse> {
   const response = await api.post<GenerateReportResponse>(
-    "/attendance/report/html",
+    "/attendance/report/attendance-html",
     params
   );
   return response.data;
@@ -89,7 +89,7 @@ export async function generateHtmlReport(
 export async function generatePdfReport(
   params: GenerateReportParams
 ): Promise<{ blob: Blob; filename: string }> {
-  const response = await api.post("/attendance/report/pdf", params, {
+  const response = await api.post("/attendance/report/attendance-pdf", params, {
     responseType: "blob",
     validateStatus: (status) => status < 500, // Handle 4xx errors manually
   });
@@ -117,6 +117,30 @@ export async function generatePdfReport(
   }
 
   return { blob: response.data, filename };
+}
+
+export interface GeneratePayoutReportParams extends GenerateReportParams {
+  payout: {
+    hourlySalary: number;
+    compDaySalary: number;
+    bonus: number;
+    dues: number;
+    totalHoursDecimal: number;
+    hoursEarning: number;
+    compEarning: number;
+    totalPayout: number;
+    compDayDates: string[]; // Array of formatted date strings like "Tue 22"
+  };
+}
+
+export async function generatePayoutReport(
+  params: GeneratePayoutReportParams
+): Promise<GenerateReportResponse> {
+  const response = await api.post<GenerateReportResponse>(
+    "/attendance/report/payout",
+    params
+  );
+  return response.data;
 }
 
 // ============================================

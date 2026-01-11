@@ -40,6 +40,20 @@ interface GenerateReportDto {
   };
 }
 
+interface GeneratePayoutReportDto extends GenerateReportDto {
+  payout: {
+    hourlySalary: number;
+    compDaySalary: number;
+    bonus: number;
+    dues: number;
+    totalHoursDecimal: number;
+    hoursEarning: number;
+    compEarning: number;
+    totalPayout: number;
+    compDayDates: string[];
+  };
+}
+
 @ApiTags("Attendance")
 @Controller("attendance")
 export class AttendanceController {
@@ -48,7 +62,7 @@ export class AttendanceController {
     private readonly reportTemplateService: ReportTemplateService
   ) {}
 
-  @Post("report/html")
+  @Post("report/attendance-html")
   @ApiOperation({ summary: "Generate HTML attendance report for a user" })
   @ApiBody({
     schema: {
@@ -97,7 +111,69 @@ export class AttendanceController {
     }
   }
 
-  @Post("report/pdf")
+  @Post("report/payout")
+  @ApiOperation({ summary: "Generate HTML payout report for a user" })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        userId: { type: "number" },
+        userName: { type: "string" },
+        dailyRecords: { type: "array" },
+        dateRange: {
+          type: "object",
+          properties: {
+            from: { type: "string" },
+            to: { type: "string" },
+          },
+        },
+        summary: {
+          type: "object",
+          properties: {
+            totalHours: { type: "string" },
+            avgHours: { type: "string" },
+            presentDays: { type: "number" },
+            absentDays: { type: "number" },
+            incompleteDays: { type: "number" },
+            compDays: { type: "number" },
+            totalDays: { type: "number" },
+          },
+        },
+        payout: {
+          type: "object",
+          properties: {
+            hourlySalary: { type: "number" },
+            compDaySalary: { type: "number" },
+            bonus: { type: "number" },
+            dues: { type: "number" },
+            totalHoursDecimal: { type: "number" },
+            hoursEarning: { type: "number" },
+            compEarning: { type: "number" },
+            totalPayout: { type: "number" },
+          },
+        },
+      },
+    },
+  })
+  async generatePayoutHtmlReport(
+    @Body() dto: GeneratePayoutReportDto
+  ): Promise<{ html: string; filename: string }> {
+    try {
+      const result = this.reportTemplateService.generatePayoutHtmlReport(dto);
+      return result;
+    } catch (error) {
+      throw new HttpException(
+        {
+          success: false,
+          message: "Failed to generate payout report",
+          error: error.message || "Unknown error",
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Post("report/attendance-pdf")
   @ApiOperation({ summary: "Generate PDF attendance report for a user" })
   @ApiBody({
     schema: {
@@ -165,6 +241,64 @@ export class AttendanceController {
         {
           success: false,
           message: "Failed to generate PDF report",
+          error: error.message || "Unknown error",
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  @Post("report/payout-pdf")
+  @ApiOperation({ summary: "Generate PDF payout report for a user" })
+  async generatePayoutPdfReport(
+    @Body() dto: GeneratePayoutReportDto,
+    @Res() res: Response
+  ): Promise<void> {
+    let browser: puppeteer.Browser | null = null;
+    try {
+      // Generate HTML first
+      const { html, filename } =
+        this.reportTemplateService.generatePayoutHtmlReport(dto);
+      const pdfFilename = filename.replace(/\.html$/i, ".pdf");
+
+      // Launch Puppeteer and generate PDF
+      browser = await puppeteer.launch({
+        headless: true,
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      });
+
+      const page = await browser.newPage();
+      await page.setContent(html, { waitUntil: "networkidle0" });
+
+      const pdfBuffer = await page.pdf({
+        format: "A4",
+        printBackground: true,
+        margin: {
+          top: "5mm",
+          bottom: "5mm",
+          left: "5mm",
+          right: "5mm",
+        },
+      });
+
+      await browser.close();
+      browser = null;
+
+      // Send PDF response
+      res.set({
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="${pdfFilename}"`,
+        "Content-Length": pdfBuffer.length,
+      });
+      res.send(Buffer.from(pdfBuffer));
+    } catch (error) {
+      if (browser) {
+        await browser.close();
+      }
+      throw new HttpException(
+        {
+          success: false,
+          message: "Failed to generate payout PDF report",
           error: error.message || "Unknown error",
         },
         HttpStatus.INTERNAL_SERVER_ERROR

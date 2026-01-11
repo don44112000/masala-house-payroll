@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, Clock, LogIn, LogOut, AlertTriangle, FileText, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Clock, LogIn, LogOut, AlertTriangle, FileText, Plus, Trash2, Wallet } from 'lucide-react';
 import type { UserAttendanceSummary, AttendanceSettings, DailyAttendance } from '@attendance/shared';
 import { cn, formatDate, formatTime, formatDuration, getStatusConfig } from '../lib/utils';
 import ReportPreview from './ReportPreview';
 import TimePickerModal from './TimePickerModal';
+import PayoutModal from './PayoutModal';
 
 interface AttendanceTableProps {
   user: UserAttendanceSummary;
@@ -109,6 +110,7 @@ export default function AttendanceTable({ user, settings, onRefresh }: Attendanc
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [showReportPreview, setShowReportPreview] = useState(false);
+  const [showPayoutModal, setShowPayoutModal] = useState(false);
   const [confirmCompDate, setConfirmCompDate] = useState<string | null>(null);
   
   // State for adding manual punch
@@ -201,6 +203,13 @@ export default function AttendanceTable({ user, settings, onRefresh }: Attendanc
               >
                 <FileText className="w-4 h-4" />
                 Generate Report
+              </button>
+              <button
+                onClick={() => setShowPayoutModal(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent-cyan/20 hover:bg-accent-cyan/30 text-accent-cyan transition-colors text-sm font-medium"
+              >
+                <Wallet className="w-4 h-4" />
+                Payout Calculator
               </button>
               <span className="text-sm text-midnight-400">
                 Work Hours: <span className="text-midnight-200">{settings.workStartTime}</span> -{' '}
@@ -415,6 +424,15 @@ export default function AttendanceTable({ user, settings, onRefresh }: Attendanc
         user={user}
         dateRange={dateRange}
         onClose={() => setShowReportPreview(false)}
+      />
+    )}
+
+    {/* Payout Modal */}
+    {showPayoutModal && (
+      <PayoutModal
+        user={user}
+        dateRange={dateRange}
+        onClose={() => setShowPayoutModal(false)}
       />
     )}
   </>

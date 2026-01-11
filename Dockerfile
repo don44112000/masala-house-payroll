@@ -27,6 +27,9 @@ RUN pnpm install --frozen-lockfile
 # Copy the rest of the application code
 COPY . .
 
+# Build the Shared Package
+RUN pnpm run build:shared
+
 # Build the Frontend (Static Site)
 RUN pnpm run build:web
 

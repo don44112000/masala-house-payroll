@@ -7,6 +7,7 @@ interface MonthYearPickerProps {
   selectedMonth: number; // 0-11
   selectedYear: number;
   onChange: (month: number, year: number) => void;
+  className?: string;
 }
 
 const MONTHS = [
@@ -18,6 +19,7 @@ export default function MonthYearPicker({
   selectedMonth,
   selectedYear,
   onChange,
+  className,
 }: MonthYearPickerProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -53,7 +55,7 @@ export default function MonthYearPicker({
   const next = getNextMonth();
 
   return (
-    <div className="max-w-2xl mx-auto mb-6">
+    <div className={cn("w-full max-w-2xl mx-auto", className)}>
       {/* Carousel View */}
       <motion.div
         className="glass rounded-2xl p-4 transition-all duration-300 ease-in-out"

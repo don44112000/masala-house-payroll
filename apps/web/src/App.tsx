@@ -11,9 +11,12 @@ import SettingsPanel from './components/SettingsPanel';
 import MonthYearPicker from './components/MonthYearPicker';
 import Header from './components/Header';
 import V2Dashboard from './components/V2Dashboard';
+import ModeSelector from './components/ModeSelector';
+
+type AppMode = 'landing' | 'memory' | 'database';
 
 function App() {
-  const [showV2, setShowV2] = useState(false);
+  const [appMode, setAppMode] = useState<AppMode>('landing');
   const [report, setReport] = useState<AttendanceReport | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [settings, setSettings] = useState<AttendanceSettings>(DEFAULT_SETTINGS);
@@ -28,9 +31,21 @@ function App() {
     }
   };
 
+  const handleHome = () => {
+    setAppMode('landing');
+  };
+
+  const handleToggleMode = () => {
+    setAppMode(current => current === 'memory' ? 'database' : 'memory');
+  };
+
   const handleReset = () => {
     setReport(null);
     setSelectedUserId(null);
+  };
+
+  const handleSelectMode = (mode: 'memory' | 'database') => {
+    setAppMode(mode);
   };
 
   // Filter report data by selected month/year
@@ -94,115 +109,173 @@ function App() {
 
   const selectedUser = filteredReport?.users.find((u) => u.userId === selectedUserId);
 
-  // Render V2 Dashboard if toggled
-  if (showV2) {
-    return <V2Dashboard onBack={() => setShowV2(false)} />;
-  }
-
   return (
-    <div className="min-h-screen bg-midnight-950 bg-grid-pattern">
+    <div className="min-h-screen bg-midnight-950 bg-grid-pattern overflow-x-hidden">
       {/* Ambient background effects */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-accent-cyan/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-midnight-600/20 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-accent-pink/5 rounded-full blur-3xl" />
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-accent-cyan/10 rounded-full blur-3xl opacity-50" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-midnight-600/20 rounded-full blur-3xl opacity-50" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-accent-pink/5 rounded-full blur-3xl opacity-30" />
       </div>
 
       <div className="relative z-10 container mx-auto px-4 py-8 max-w-7xl">
-        <Header
-          onReset={handleReset}
-          onSettingsClick={() => setShowSettings(true)}
-          hasReport={!!report}
-        />
-
-        {/* V2 Dashboard Toggle Button */}
-        <motion.div 
-          className="flex justify-end mb-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-        >
-          <button
-            onClick={() => setShowV2(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-accent-cyan/20 to-accent-pink/20 border border-accent-cyan/30 text-accent-cyan hover:border-accent-cyan/50 transition-all"
-          >
-            <span className="text-sm font-medium">Switch to V2 Dashboard (Database)</span>
-          </button>
-        </motion.div>
-
         <AnimatePresence mode="wait">
-          {!report ? (
+          {appMode === 'landing' ? (
             <motion.div
-              key="uploader"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
+              key="landing"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.05 }}
               transition={{ duration: 0.3 }}
             >
-              <MonthYearPicker
-                selectedMonth={selectedMonth}
-                selectedYear={selectedYear}
-                onChange={(month, year) => {
-                  setSelectedMonth(month);
-                  setSelectedYear(year);
-                }}
-              />
-              <FileUploader
-                onUploadSuccess={handleUploadSuccess}
-                settings={settings}
+              <div className="flex flex-col items-center gap-4 mb-16 justify-center pt-4 text-center">
+                <img 
+                  src="/logo.png" 
+                  alt="Lokhande's Masala House" 
+                  className="w-32 h-32 object-contain drop-shadow-2xl"
+                />
+                <div>
+                  <h1 className="text-3xl md:text-4xl font-bold font-display text-white tracking-tight mb-2">
+                    Lokhande's Masala House
+                  </h1>
+                  <p className="text-midnight-300 text-sm font-medium tracking-wide">
+                    Attendance & Payroll Management System
+                  </p>
+                </div>
+              </div>
+              <ModeSelector onSelectMode={handleSelectMode} />
+            </motion.div>
+          ) : appMode === 'database' ? (
+            <motion.div
+              key="database"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <V2Dashboard 
+                onHome={handleHome}
+                onSwitchMode={handleToggleMode}
               />
             </motion.div>
           ) : (
             <motion.div
-              key="results"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              key="memory"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.3 }}
-              className="space-y-6"
             >
-              {/* Summary Cards */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-              >
-                <SummaryCards report={filteredReport!} />
-              </motion.div>
+              <Header
+                onHome={handleHome}
+                onSettingsClick={() => setShowSettings(true)}
+                mode="memory"
+                onSwitchMode={handleToggleMode}
+              />
+              {!report ? (
+                <motion.div
+                  key="uploader"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <MonthYearPicker
+                    selectedMonth={selectedMonth}
+                    selectedYear={selectedYear}
+                    onChange={(month, year) => {
+                      setSelectedMonth(month);
+                      setSelectedYear(year);
+                    }}
+                    className="mb-6"
+                  />
+                  <FileUploader
+                    onUploadSuccess={handleUploadSuccess}
+                    settings={settings}
+                  />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="results"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-6"
+                >
+                  {/* Result Toolbar: Picker + New File */}
+                  <div className="flex flex-col md:block relative mb-6">
+                    <div className="flex justify-center w-full">
+                      <MonthYearPicker
+                        selectedMonth={selectedMonth}
+                        selectedYear={selectedYear}
+                        onChange={(month, year) => {
+                          setSelectedMonth(month);
+                          setSelectedYear(year);
+                        }}
+                      />
+                    </div>
+                    <div className="mt-4 md:mt-0 md:absolute md:right-0 md:top-0 md:h-full md:flex md:items-center pointer-events-none">
+                      <div className="pointer-events-auto">
+                         <motion.button
+                           initial={{ opacity: 0, scale: 0.9 }}
+                           animate={{ opacity: 1, scale: 1 }}
+                           onClick={handleReset}
+                           className="relative flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-midnight-900/60 border border-midnight-700/50 backdrop-blur-sm hover:border-accent-pink/50 hover:bg-accent-pink/5 hover:shadow-[0_0_15px_-3px_rgba(244,114,182,0.15)] text-midnight-300 transition-all duration-300 group"
+                         >
+                           <span className="text-sm font-medium group-hover:text-accent-pink transition-colors">
+                             New File
+                           </span>
+                         </motion.button>
+                      </div>
+                    </div>
+                  </div>
 
-              {/* User Selector */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-              >
-                <UserSelector
-                  users={filteredReport!.users}
-                  selectedUserId={selectedUserId}
-                  onSelectUser={setSelectedUserId}
-                />
-              </motion.div>
-
-              {/* User Details */}
-              {selectedUser && (
-                <>
-                  {/* Chart */}
+                  {/* Summary Cards */}
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
+                    transition={{ delay: 0.1 }}
                   >
-                    <AttendanceChart user={selectedUser} />
+                    <SummaryCards report={filteredReport!} />
                   </motion.div>
 
-                  {/* Table */}
+                  {/* User Selector */}
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 }}
+                    transition={{ delay: 0.2 }}
                   >
-                    <AttendanceTable user={selectedUser} settings={settings} />
+                    <UserSelector
+                      users={filteredReport!.users}
+                      selectedUserId={selectedUserId}
+                      onSelectUser={setSelectedUserId}
+                    />
                   </motion.div>
-                </>
+
+                  {/* User Details */}
+                  {selectedUser && (
+                    <>
+                      {/* Chart */}
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                      >
+                        <AttendanceChart user={selectedUser} />
+                      </motion.div>
+
+                      {/* Table */}
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.4 }}
+                      >
+                        <AttendanceTable user={selectedUser} settings={settings} />
+                      </motion.div>
+                    </>
+                  )}
+                </motion.div>
               )}
             </motion.div>
           )}
@@ -222,6 +295,7 @@ function App() {
     </div>
   );
 }
+
 
 export default App;
 

@@ -8,14 +8,16 @@ import AttendanceTable from './AttendanceTable';
 import AttendanceChart from './AttendanceChart';
 import SettingsPanel from './SettingsPanel';
 import MonthYearPicker from './MonthYearPicker';
-import { Database, Loader2, RefreshCw, Home } from 'lucide-react';
-import { getV2Report } from '../services/api';
+import Header from './Header';
+import { Database, Loader2, RefreshCw, Users, FileText } from 'lucide-react';
+import { getV2Report, uploadUsersToDb, uploadAttendanceToDb } from '../services/api';
 
 interface V2DashboardProps {
-  onBack: () => void;
+  onHome: () => void;
+  onSwitchMode: () => void;
 }
 
-export default function V2Dashboard({ onBack }: V2DashboardProps) {
+export default function V2Dashboard({ onHome, onSwitchMode }: V2DashboardProps) {
   const [report, setReport] = useState<AttendanceReport | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [settings, setSettings] = useState<AttendanceSettings>(DEFAULT_SETTINGS);
@@ -58,69 +60,95 @@ export default function V2Dashboard({ onBack }: V2DashboardProps) {
   const selectedUser = report?.users.find((u) => u.userId === selectedUserId);
 
   return (
-    <div className="min-h-screen bg-midnight-950 bg-grid-pattern">
-      {/* Ambient background effects */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-accent-cyan/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-midnight-600/20 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-accent-pink/5 rounded-full blur-3xl" />
-      </div>
+    <div className="w-full">
+      {/* Header - Shared Component */}
+      <Header
+        onHome={onHome}
+        onSettingsClick={() => setShowSettings(true)}
+        mode="database"
+        onSwitchMode={onSwitchMode}
+      />
 
-      <div className="relative z-10 container mx-auto px-4 py-8 max-w-7xl">
-        {/* Header */}
-        <header className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <div className="p-3 rounded-2xl bg-gradient-to-br from-accent-cyan/20 to-accent-pink/20 border border-accent-cyan/30">
-              <Database className="w-8 h-8 text-accent-cyan" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-midnight-100">V2 Dashboard</h1>
-              <p className="text-sm text-midnight-400">Data from PostgreSQL Database</p>
-            </div>
+      <div className="flex flex-col gap-6">
+        {/* Toolbar */}
+        {/* Toolbar */}
+        <div className="flex flex-col md:block relative mb-6">
+          <div className="flex justify-center w-full">
+            <MonthYearPicker
+              selectedMonth={selectedMonth}
+              selectedYear={selectedYear}
+              onChange={(month, year) => {
+                setSelectedMonth(month);
+                setSelectedYear(year);
+              }}
+            />
           </div>
 
-          <div className="flex items-center gap-3">
-            <motion.button
-              onClick={loadReport}
-              disabled={loading}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-midnight-800 border border-midnight-700 hover:border-accent-cyan/50 text-midnight-200 transition-all"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
-            </motion.button>
-
-            <motion.button
-              onClick={() => setShowSettings(true)}
-              className="px-4 py-2 rounded-xl bg-midnight-800 border border-midnight-700 hover:border-accent-cyan/50 text-midnight-200 transition-all"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              Settings
-            </motion.button>
-
-            <motion.button
-              onClick={onBack}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-midnight-800 border border-midnight-700 hover:border-accent-pink/50 text-midnight-200 transition-all"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <Home className="w-4 h-4" />
-              Back to V1
-            </motion.button>
+          <div className="mt-4 md:mt-0 md:absolute md:left-0 md:top-0 md:h-full md:flex md:items-center pointer-events-none">
+            <div className="pointer-events-auto flex gap-3">
+               {/* Upload Users */}
+               <label className="relative flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-midnight-900/60 border border-midnight-700/50 backdrop-blur-sm hover:border-accent-cyan/50 hover:bg-accent-cyan/5 hover:shadow-[0_0_15px_-3px_rgba(34,211,238,0.15)] transition-all duration-300 cursor-pointer group">
+                  <Users className="w-4 h-4 text-midnight-400 group-hover:text-accent-cyan transition-colors" />
+                  <span className="text-sm font-medium text-midnight-300 group-hover:text-accent-cyan transition-colors">Users</span>
+                  <input 
+                    type="file" 
+                    hidden 
+                    accept=".dat" 
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      try {
+                        const result = await uploadUsersToDb(file);
+                        alert(result.message);
+                      } catch (err: unknown) {
+                        const error = err as { message?: string };
+                        alert('Error: ' + (error.message || 'Upload failed'));
+                      }
+                      e.target.value = '';
+                    }} 
+                  />
+               </label>
+               {/* Upload Attendance */}
+               <label className="relative flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-midnight-900/60 border border-midnight-700/50 backdrop-blur-sm hover:border-accent-pink/50 hover:bg-accent-pink/5 hover:shadow-[0_0_15px_-3px_rgba(244,114,182,0.15)] transition-all duration-300 cursor-pointer group">
+                  <FileText className="w-4 h-4 text-midnight-400 group-hover:text-accent-pink transition-colors" />
+                  <span className="text-sm font-medium text-midnight-300 group-hover:text-accent-pink transition-colors">Data</span>
+                  <input 
+                    type="file" 
+                    hidden 
+                    accept=".dat,.txt,.csv" 
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      try {
+                        const result = await uploadAttendanceToDb(file);
+                        alert(result.message);
+                        loadReport(); // Auto refresh after upload
+                      } catch (err: unknown) {
+                        const error = err as { message?: string };
+                        alert('Error: ' + (error.message || 'Upload failed'));
+                      }
+                      e.target.value = '';
+                    }} 
+                  />
+               </label>
+            </div>
           </div>
-        </header>
-
-        {/* Month/Year Picker */}
-        <MonthYearPicker
-          selectedMonth={selectedMonth}
-          selectedYear={selectedYear}
-          onChange={(month, year) => {
-            setSelectedMonth(month);
-            setSelectedYear(year);
-          }}
-        />
+          
+          <div className="mt-4 md:mt-0 md:absolute md:right-0 md:top-0 md:h-full md:flex md:items-center pointer-events-none">
+            <div className="pointer-events-auto">
+              <motion.button
+                onClick={loadReport}
+                disabled={loading}
+                className="relative flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-midnight-900/60 border border-midnight-700/50 backdrop-blur-sm hover:border-emerald-500/50 hover:bg-emerald-500/5 hover:shadow-[0_0_15px_-3px_rgba(16,185,129,0.15)] text-midnight-300 transition-all duration-300 group"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <RefreshCw className={`w-4 h-4 group-hover:text-emerald-400 transition-colors ${loading ? 'animate-spin' : ''}`} />
+                <span className="text-sm font-medium group-hover:text-emerald-400 transition-colors">Refresh</span>
+              </motion.button>
+            </div>
+          </div>
+        </div>
 
         {/* Loading State */}
         {loading && (

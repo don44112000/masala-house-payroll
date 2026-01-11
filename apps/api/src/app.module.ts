@@ -25,6 +25,8 @@ import { SpaController } from "./spa.controller";
       database: process.env.DB_DATABASE || "attendence_db",
       entities: [Employee, Punch, DailyAttendance],
       synchronize: false, // Using manual migrations per user's SQL
+      ssl:
+        process.env.DB_SSL === "false" ? false : { rejectUnauthorized: false },
     }),
     AttendanceModule,
     V2AttendanceModule,

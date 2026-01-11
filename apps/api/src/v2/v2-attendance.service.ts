@@ -796,6 +796,15 @@ export class V2AttendanceService {
    */
   async deletePunch(userId: number, punchTimeStr: string): Promise<void> {
     await this.dataSource.transaction(async (manager) => {
+      // First, find the employee by biometric_id (userId is the biometric_id from frontend)
+      const employee = await manager.findOne(Employee, {
+        where: { biometric_id: userId },
+      });
+
+      if (!employee) {
+        throw new Error(`Employee with ID ${userId} not found`);
+      }
+
       // Create date object from string (ISO format expected from frontend)
       const punchTime = new Date(punchTimeStr);
       if (isNaN(punchTime.getTime())) {
@@ -804,7 +813,7 @@ export class V2AttendanceService {
 
       const punch = await manager.findOne(Punch, {
         where: {
-          employee_id: userId,
+          employee_id: employee.id,
           punch_time: punchTime,
         },
       });
@@ -816,7 +825,7 @@ export class V2AttendanceService {
       await manager.remove(Punch, punch);
 
       const dateStr = punchTime.toISOString().split("T")[0];
-      await this.recalculateDay(manager, userId, dateStr);
+      await this.recalculateDay(manager, employee.id, dateStr);
 
       this.logger.log(`Deleted punch for user ${userId} at ${punchTimeStr}`);
     });

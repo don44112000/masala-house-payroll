@@ -4,8 +4,17 @@ import { AttendanceModule } from "./attendance/attendance.module";
 import { V2AttendanceModule } from "./v2/v2-attendance.module";
 import { Employee, Punch, DailyAttendance } from "./v2/entities";
 
+import { ServeStaticModule } from "@nestjs/serve-static";
+import { join } from "path";
+
+import { SpaController } from "./spa.controller";
+
 @Module({
   imports: [
+    ServeStaticModule.forRoot({
+      rootPath: join(process.cwd(), "apps/web/dist"),
+      exclude: ["/api/(.*)"],
+    }),
     // PostgreSQL database for v2 APIs
     TypeOrmModule.forRoot({
       type: "postgres",
@@ -20,5 +29,6 @@ import { Employee, Punch, DailyAttendance } from "./v2/entities";
     AttendanceModule,
     V2AttendanceModule,
   ],
+  controllers: [SpaController],
 })
 export class AppModule {}

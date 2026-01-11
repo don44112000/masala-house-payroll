@@ -27,10 +27,11 @@ RUN pnpm install --frozen-lockfile
 # Copy the rest of the application code
 COPY . .
 
-# Build the API (and shared packages)
+# Build the Frontend (Static Site)
+RUN pnpm run build:web
+
+# Build the API
 # "build:api" in root runs "pnpm --filter @attendance/api build"
-# which usually depends on shared being built. 
-# We'll run "turbo run build --filter=@attendance/api" or just the script
 RUN pnpm run build:api
 
 # Set Puppeteer environment variables to use installed Chromium

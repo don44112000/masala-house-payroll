@@ -817,13 +817,15 @@ export class ReportTemplateService {
       `;
     });
 
-    // Format currency helper
+    // Format currency helper - add space after ₹ for consistent PDF rendering
     const formatCurrency = (amount: number) => {
-      return new Intl.NumberFormat("en-IN", {
+      const formatted = new Intl.NumberFormat("en-IN", {
         style: "currency",
         currency: "INR",
         minimumFractionDigits: 2,
       }).format(amount);
+      // Add a space after ₹ to prevent overlap in PDF
+      return formatted.replace("₹", "₹ ");
     };
 
     // Filename

@@ -212,6 +212,9 @@ export class AttendanceController {
       const page = await browser.newPage();
       await page.setContent(html, { waitUntil: "networkidle0" });
 
+      // Wait for fonts to load before generating PDF
+      await page.evaluateHandle("document.fonts.ready");
+
       const pdfBuffer = await page.pdf({
         format: "A4",
         printBackground: true,
@@ -269,6 +272,9 @@ export class AttendanceController {
 
       const page = await browser.newPage();
       await page.setContent(html, { waitUntil: "networkidle0" });
+
+      // Wait for fonts to load before generating PDF
+      await page.evaluateHandle("document.fonts.ready");
 
       const pdfBuffer = await page.pdf({
         format: "A4",

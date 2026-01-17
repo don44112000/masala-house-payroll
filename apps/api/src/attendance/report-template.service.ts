@@ -842,7 +842,7 @@ export class ReportTemplateService {
 <head>
   <meta charset="UTF-8">
   <title>Payout Report - ${userName}</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --primary: #0f172a;
@@ -930,7 +930,7 @@ export class ReportTemplateService {
     .payout-breakdown { background: white; padding: 15px; border-radius: 8px; border: 1px solid #d1fae5; }
     .breakdown-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-size: 12px; }
     .breakdown-row:last-child { border-bottom: none; }
-    .breakdown-row .calc { color: #6b7280; }
+    .breakdown-row .calc { color: #6b7280; font-family: 'Noto Sans', 'Inter', sans-serif; }
     .breakdown-row .amount { font-family: 'JetBrains Mono', monospace; font-weight: 500; }
     .breakdown-row.addition .amount { color: #16a34a; }
     .breakdown-row.deduction .amount { color: #dc2626; }
@@ -1064,9 +1064,7 @@ export class ReportTemplateService {
         <div class="breakdown-row addition">
           <span class="calc">${payout.totalHoursDecimal.toFixed(
             2
-          )} hrs ×&nbsp;<span style="margin-right: 2px;">₹</span>${payout.hourlySalary.toFixed(
-      2
-    )}</span>
+          )} hrs × ${formatCurrency(payout.hourlySalary)}</span>
           <span class="amount">+ ${formatCurrency(payout.hoursEarning)}</span>
         </div>
         ${

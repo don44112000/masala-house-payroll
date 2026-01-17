@@ -21,7 +21,7 @@ import {
 export class AttendanceService {
   constructor(
     private readonly datParser: DatFileParser,
-    private readonly userDataParser: UserDataParser,
+    private readonly userDataParser: UserDataParser
   ) {}
 
   /**
@@ -31,7 +31,7 @@ export class AttendanceService {
     buffer: Buffer,
     fileName: string,
     settingsDto?: AttendanceSettingsDto,
-    userFileBuffer?: Buffer,
+    userFileBuffer?: Buffer
   ): Promise<AttendanceReport> {
     // Merge settings with defaults
     const settings: AttendanceSettings = {
@@ -46,7 +46,7 @@ export class AttendanceService {
         userMapping = await this.userDataParser.parse(userFileBuffer);
         console.log(`Loaded ${userMapping.size} user mappings`);
       } catch (error) {
-        console.warn('Failed to parse user data file:', error.message);
+        console.warn("Failed to parse user data file:", error.message);
         // Continue without user mapping
       }
     }
@@ -65,12 +65,12 @@ export class AttendanceService {
     const users: UserAttendanceSummary[] = [];
     for (const [userId, records] of userRecords) {
       const summary = this.calculateUserAttendance(userId, records, settings);
-      
+
       // Enrich with user name if available
       if (userMapping && userMapping.has(userId)) {
         summary.userName = userMapping.get(userId);
       }
-      
+
       users.push(summary);
     }
 
@@ -126,7 +126,9 @@ export class AttendanceService {
     const dateRecords = this.groupByDate(records);
 
     // Find month boundaries from the records
-    const dates = Array.from(dateRecords.keys()).map((d) => new Date(d + 'T00:00:00'));
+    const dates = Array.from(dateRecords.keys()).map(
+      (d) => new Date(d + "T00:00:00")
+    );
     const minDate = new Date(Math.min(...dates.map((d) => d.getTime())));
     const maxDate = new Date(Math.max(...dates.map((d) => d.getTime())));
 
@@ -193,6 +195,7 @@ export class AttendanceService {
         absentDays++;
       } else if (daily.status === "INCOMPLETE") {
         incompleteDays++;
+        totalWorkingMinutes += daily.totalHours * 60 + daily.totalMinutes;
       } else if (daily.status === "COMP") {
         compDays++;
       }

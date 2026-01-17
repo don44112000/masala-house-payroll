@@ -78,6 +78,7 @@ function App() {
           absentDays++;
         } else if (daily.status === 'INCOMPLETE') {
           incompleteDays++;
+          totalWorkingMinutes += daily.totalHours * 60 + daily.totalMinutes;
         }
       });
 

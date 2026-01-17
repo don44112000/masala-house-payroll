@@ -82,7 +82,7 @@ user_summary AS (
     COUNT(*) FILTER (WHERE status = 'ABSENT') as absent_days,
     COUNT(*) FILTER (WHERE status = 'INCOMPLETE') as incomplete_days,
     COUNT(*) FILTER (WHERE status = 'COMP') as comp_days,
-    COALESCE(SUM(total_minutes) FILTER (WHERE status = 'PRESENT'), 0) as total_working_minutes,
+    COALESCE(SUM(total_minutes) FILTER (WHERE status IN ('PRESENT', 'INCOMPLETE')), 0) as total_working_minutes,
     COUNT(*) FILTER (WHERE is_late) as late_days,
     COUNT(*) FILTER (WHERE is_early_out) as early_out_days,
     COALESCE(SUM(overtime) FILTER (WHERE status = 'PRESENT'), 0) as overtime_minutes,

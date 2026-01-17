@@ -817,15 +817,13 @@ export class ReportTemplateService {
       `;
     });
 
-    // Format currency helper - add space after ₹ for consistent PDF rendering
+    // Format currency helper
     const formatCurrency = (amount: number) => {
-      const formatted = new Intl.NumberFormat("en-IN", {
+      return new Intl.NumberFormat("en-IN", {
         style: "currency",
         currency: "INR",
         minimumFractionDigits: 2,
       }).format(amount);
-      // Add a space after ₹ to prevent overlap in PDF
-      return formatted.replace("₹", "₹ ");
     };
 
     // Filename
@@ -1066,7 +1064,9 @@ export class ReportTemplateService {
         <div class="breakdown-row addition">
           <span class="calc">${payout.totalHoursDecimal.toFixed(
             2
-          )} hrs ×&nbsp;${formatCurrency(payout.hourlySalary)}</span>
+          )} hrs ×&nbsp;<span style="margin-right: 2px;">₹</span>${payout.hourlySalary.toFixed(
+      2
+    )}</span>
           <span class="amount">+ ${formatCurrency(payout.hoursEarning)}</span>
         </div>
         ${

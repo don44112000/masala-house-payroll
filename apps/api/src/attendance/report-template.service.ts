@@ -1066,7 +1066,7 @@ export class ReportTemplateService {
         <div class="breakdown-row addition">
           <span class="calc">${payout.totalHoursDecimal.toFixed(
             2
-          )} hrs × ${formatCurrency(payout.hourlySalary)}</span>
+          )} hrs ×&nbsp;${formatCurrency(payout.hourlySalary)}</span>
           <span class="amount">+ ${formatCurrency(payout.hoursEarning)}</span>
         </div>
         ${

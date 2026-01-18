@@ -832,7 +832,7 @@ export class ReportTemplateService {
         style: "decimal",
         minimumFractionDigits: 2,
       }).format(amount);
-      return `₹\u00A0${formatted}`; // non-breaking space between ₹ and number
+      return `₹\u00A0\u00A0${formatted}`; // two non-breaking spaces between ₹ and number
     };
 
     // Filename

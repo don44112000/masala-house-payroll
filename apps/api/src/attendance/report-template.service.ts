@@ -51,7 +51,7 @@ export class ReportTemplateService {
     }
 
     const sortedPunches = [...punches].sort((a, b) =>
-      a.time.localeCompare(b.time)
+      a.time.localeCompare(b.time),
     );
 
     let inDuration = 0;
@@ -88,7 +88,7 @@ export class ReportTemplateService {
     if (punches.length === 0) return "";
 
     const sortedPunches = [...punches].sort((a, b) =>
-      a.time.localeCompare(b.time)
+      a.time.localeCompare(b.time),
     );
 
     return sortedPunches
@@ -171,7 +171,7 @@ export class ReportTemplateService {
     const { userId, userName, dailyRecords, dateRange, summary } = data;
 
     const sortedRecords = [...dailyRecords].sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
     );
 
     // Calculate metrics locally (fallback)
@@ -259,7 +259,7 @@ export class ReportTemplateService {
     let tableRows = "";
     sortedRecords.forEach((record, idx) => {
       const { inDuration, outDuration } = this.calculateInOutDuration(
-        record.punches
+        record.punches,
       );
       const punchRecords = this.formatPunchRecords(record.punches);
       const displayDate = this.formatDateForDisplay(record.date);
@@ -602,7 +602,7 @@ export class ReportTemplateService {
         <div class="meta-data">
           <div class="meta-period">${this.formatDateRange(
             dateRange.from,
-            dateRange.to
+            dateRange.to,
           )}</div>
           <div class="meta-generated">Generated: ${this.getCurrentTimestamp()}</div>
         </div>
@@ -687,7 +687,7 @@ export class ReportTemplateService {
     const { userId, userName, dailyRecords, dateRange, summary, payout } = data;
 
     const sortedRecords = [...dailyRecords].sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
     );
 
     // Calculate metrics locally (fallback)
@@ -768,7 +768,7 @@ export class ReportTemplateService {
     let tableRows = "";
     sortedRecords.forEach((record, idx) => {
       const { inDuration, outDuration } = this.calculateInOutDuration(
-        record.punches
+        record.punches,
       );
       const punchRecords = this.formatPunchRecords(record.punches);
       const displayDate = this.formatDateForDisplay(record.date);
@@ -824,6 +824,15 @@ export class ReportTemplateService {
         currency: "INR",
         minimumFractionDigits: 2,
       }).format(amount);
+    };
+
+    // Format currency with space after ₹ (for hourly rate to prevent PDF overlap)
+    const formatCurrencySpaced = (amount: number) => {
+      const formatted = new Intl.NumberFormat("en-IN", {
+        style: "decimal",
+        minimumFractionDigits: 2,
+      }).format(amount);
+      return `₹\u00A0${formatted}`; // non-breaking space between ₹ and number
     };
 
     // Filename
@@ -930,7 +939,7 @@ export class ReportTemplateService {
     .payout-breakdown { background: white; padding: 15px; border-radius: 8px; border: 1px solid #d1fae5; }
     .breakdown-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-size: 12px; }
     .breakdown-row:last-child { border-bottom: none; }
-    .breakdown-row .calc { color: #6b7280; font-family: 'Noto Sans', 'Inter', sans-serif; }
+    .breakdown-row .calc { color: #6b7280; font-family: 'Noto Sans', 'Inter', sans-serif; letter-spacing: 0.02em; word-spacing: 0.1em; }
     .breakdown-row .amount { font-family: 'JetBrains Mono', monospace; font-weight: 500; }
     .breakdown-row.addition .amount { color: #16a34a; }
     .breakdown-row.deduction .amount { color: #dc2626; }
@@ -994,7 +1003,7 @@ export class ReportTemplateService {
         <div class="meta-data">
           <div class="meta-period">${this.formatDateRange(
             dateRange.from,
-            dateRange.to
+            dateRange.to,
           )}</div>
           <div class="meta-generated">Generated: ${this.getCurrentTimestamp()}</div>
         </div>
@@ -1063,8 +1072,8 @@ export class ReportTemplateService {
       <div class="payout-breakdown">
         <div class="breakdown-row addition">
           <span class="calc">${payout.totalHoursDecimal.toFixed(
-            2
-          )} hrs × ${formatCurrency(payout.hourlySalary)}</span>
+            2,
+          )} hrs × ${formatCurrencySpaced(payout.hourlySalary)}</span>
           <span class="amount">+ ${formatCurrency(payout.hoursEarning)}</span>
         </div>
         ${
@@ -1073,8 +1082,8 @@ export class ReportTemplateService {
         <div class="breakdown-row addition">
           <div class="calc">
             <div>${displayCompDays} × ${formatCurrency(
-                payout.compDaySalary
-              )}</div>
+              payout.compDaySalary,
+            )}</div>
             <div class="sub-dates">(${payout.compDayDates.join(", ")})</div>
           </div>
           <span class="amount">+ ${formatCurrency(payout.compEarning)}</span>

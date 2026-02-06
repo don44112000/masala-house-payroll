@@ -87,7 +87,6 @@ export default function PayoutModal({ user, dateRange, onClose }: PayoutModalPro
     dateRange,
     summary: {
       totalHours: `${user.totalWorkingHours}h ${String(user.totalWorkingMinutes).padStart(2, '0')}m`,
-      avgHours: String(user.averageHoursPerDay),
       presentDays: user.presentDays,
       absentDays: user.absentDays,
       incompleteDays: user.incompleteDays,

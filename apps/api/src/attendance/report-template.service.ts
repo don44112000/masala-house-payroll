@@ -474,7 +474,7 @@ export class ReportTemplateService {
 
     .stats-grid-hours {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: 1fr;
       gap: 15px;
       background: white;
       padding: 15px;
@@ -645,11 +645,6 @@ export class ReportTemplateService {
           <div class="label">Total Hours Worked</div>
           <div class="value">${totalHoursMain}</div>
           <div class="sub">${totalHoursSub}</div>
-        </div>
-        <div class="hour-stat">
-          <div class="label">Avg Hours / Day</div>
-          <div class="value">${avgHoursMain}</div>
-          <div class="sub">${avgHoursSub}</div>
         </div>
       </div>
     </div>
@@ -905,7 +900,7 @@ export class ReportTemplateService {
     .user-details p { font-size: 12px; color: var(--secondary); margin-top: 4px; }
 
     .stats-grid-days { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 15px; }
-    .stats-grid-hours { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; background: white; padding: 15px; border-radius: 8px; border: 1px solid var(--border); }
+    .stats-grid-hours { display: grid; grid-template-columns: 1fr; gap: 15px; background: white; padding: 15px; border-radius: 8px; border: 1px solid var(--border); }
 
     .mini-stat { background: white; padding: 12px; border-radius: 8px; border: 1px solid var(--border); text-align: center; }
     .mini-stat .label { font-size: 10px; text-transform: uppercase; color: var(--secondary); font-weight: 600; margin-bottom: 1px; }
@@ -1052,11 +1047,6 @@ export class ReportTemplateService {
           <div class="label-mr">एकूण काम केलेले तास</div>
           <div class="value">${totalHoursMain}</div>
           <div class="sub">${totalHoursSub}</div>
-        </div>
-        <div class="hour-stat">
-          <div class="label">Avg Hours / Day</div>
-          <div class="value">${avgHoursMain}</div>
-          <div class="sub">${avgHoursSub}</div>
         </div>
       </div>
     </div>

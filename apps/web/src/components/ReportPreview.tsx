@@ -32,7 +32,6 @@ export default function ReportPreview({ user, dateRange, onClose }: ReportPrevie
           dateRange,
           summary: {
             totalHours: `${user.totalWorkingHours}h ${String(user.totalWorkingMinutes).padStart(2, '0')}m`,
-            avgHours: String(user.averageHoursPerDay),
             presentDays: user.presentDays,
             absentDays: user.absentDays,
             incompleteDays: user.incompleteDays,
@@ -62,7 +61,6 @@ export default function ReportPreview({ user, dateRange, onClose }: ReportPrevie
         dateRange,
         summary: {
           totalHours: `${user.totalWorkingHours}h ${String(user.totalWorkingMinutes).padStart(2, '0')}m`,
-          avgHours: String(user.averageHoursPerDay),
           presentDays: user.presentDays,
           absentDays: user.absentDays,
           incompleteDays: user.incompleteDays,

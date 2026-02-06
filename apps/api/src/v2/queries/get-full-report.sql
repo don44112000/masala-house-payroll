@@ -53,7 +53,7 @@ punches_agg AS (
     p.punch_time::date as date,
     json_agg(
       json_build_object(
-        'time', TO_CHAR(p.punch_time, 'HH24:MI:SS'),
+        'time', TO_CHAR(p.punch_time AT TIME ZONE 'Asia/Kolkata', 'HH24:MI:SS'),
         'type', COALESCE(p.punch_type, 'UNKNOWN'),
         'verificationType', p.verification_type,
         'isPaired', p.is_paired,
